@@ -1,18 +1,17 @@
 version: "3.8"
-
 services:
-  db:
+  db_new: # Ganti nama service
     image: postgres:15-alpine
-    container_name: smartallo_db
+    container_name: smartallo_db_v2 # Ganti nama container
     restart: always
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: smartallo_db
     ports:
-      - "5432:5432"
+      - "5433:5432" # Ganti port luar ke 5433
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_v2:/var/lib/postgresql/data # Ganti volume baru
 
 volumes:
-  db_data:
+  db_data_v2:
