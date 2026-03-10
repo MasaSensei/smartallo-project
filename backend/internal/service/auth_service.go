@@ -61,27 +61,32 @@ func (s *AuthService) Register(ctx context.Context, email, password string) erro
 func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
 	var user struct {
 		ID           uuid.UUID `db:"id"`
+		OrgID        uuid.UUID `db:"org_id"`
 		PasswordHash string    `db:"password_hash"`
 		Role         string    `db:"role"`
 	}
 
-	// 1. Cari user
-	err := s.db.GetContext(ctx, &user, "SELECT id, password_hash, role FROM users WHERE email = $1", email)
+	query := `
+        SELECT u.id, u.password_hash, u.role, o.id as org_id 
+        FROM users u 
+        JOIN organizations o ON o.owner_id = u.id 
+        WHERE u.email = $1 LIMIT 1`
+
+	err := s.db.GetContext(ctx, &user, query, email)
 	if err != nil {
 		return "", errors.New("email atau password salah")
 	}
 
-	// 2. Verifikasi password
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return "", errors.New("email atau password salah")
 	}
 
-	// 3. Generate JWT Token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID.String(),
+		"org_id":  user.OrgID.String(), // SINKRON DENGAN MIDDLEWARE
 		"role":    user.Role,
-		"exp":     time.Now().Add(time.Hour * 72).Unix(), // Token berlaku 3 hari
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	})
 
 	return token.SignedString([]byte(s.jwtSecret))

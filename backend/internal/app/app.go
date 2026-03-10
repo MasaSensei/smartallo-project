@@ -4,6 +4,7 @@ import (
 	"os"
 
 	_ "github.com/MasaSensei/smartallo-backend/docs"
+	"github.com/MasaSensei/smartallo-backend/internal/delivery/http"
 	"github.com/MasaSensei/smartallo-backend/internal/delivery/http/handler"
 	"github.com/MasaSensei/smartallo-backend/internal/infrastructure/database"
 	"github.com/MasaSensei/smartallo-backend/internal/service"
@@ -13,35 +14,29 @@ import (
 )
 
 func Run() {
-	// 1. Inisialisasi Database & Seeder
 	db := database.ConnectDB()
 	defer db.Close()
-	database.SeedDatabase(db)
 
-	// 2. Inisialisasi Service (Business Logic)
-	// Kita ambil JWT Secret dari env
 	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "smartallo-super-secret-key"
-	}
+
 	authService := service.NewAuthService(db, jwtSecret)
+	txService := service.NewTransactionService(db)
 
-	// 3. Inisialisasi Handler (Delivery)
 	authHandler := handler.NewAuthHandler(authService)
+	txHandler := handler.NewTransactionHandler(txService)
 
-	// 4. Setup Echo Framework
+	// 3. Setup Echo
 	e := echo.New()
+	e.Use(middleware.Logger(), middleware.Recover())
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	// Middleware (Log request & Recovery biar gak panik kalau error)
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	// 4. Panggil Router Terpisah
+	http.SetupRouter(http.RouterConfig{
+		Echo:               e,
+		AuthHandler:        authHandler,
+		TransactionHandler: txHandler,
+		JwtSecret:          jwtSecret,
+	})
 
-	// 5. Routing
-	api := e.Group("/api/v1")
-
-	authHandler.Route(api.Group("/auth"))
-
-	// 6. Jalankan Server
 	e.Logger.Fatal(e.Start(":8080"))
 }

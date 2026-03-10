@@ -7,7 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// User - Pemilik akun & penentu tier (Free/Pro/UMKM)
+// User
 type User struct {
 	ID           uuid.UUID  `json:"id" db:"id"`
 	Email        string     `json:"email" db:"email"`
@@ -18,50 +18,65 @@ type User struct {
 	DeletedAt    *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
-// Organization - Wadah untuk memisahkan Personal vs UMKM
+// Organization
 type Organization struct {
 	ID        uuid.UUID  `json:"id" db:"id"`
 	OwnerID   uuid.UUID  `json:"owner_id" db:"owner_id"`
 	Name      string     `json:"name" db:"name"`
-	Type      string     `json:"type" db:"type"` // PERSONAL / UMKM
+	Type      string     `json:"type" db:"type"`
+	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
-// Pocket - "Kantong" atau "Celengan" tempat uang disimpan
+// OrgMember - BARU (Sesuai skema Sultan)
+type OrgMember struct {
+	ID        uuid.UUID `json:"id" db:"id"`
+	OrgID     uuid.UUID `json:"org_id" db:"org_id"`
+	UserID    uuid.UUID `json:"user_id" db:"user_id"`
+	Role      string    `json:"role" db:"role"` // OWNER/ADMIN/STAFF
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}
+
+// Pocket
 type Pocket struct {
 	ID                uuid.UUID       `json:"id" db:"id"`
 	OrgID             uuid.UUID       `json:"org_id" db:"org_id"`
 	Name              string          `json:"name" db:"name"`
 	Balance           decimal.Decimal `json:"balance" db:"balance"`
-	AllocationRule    float64         `json:"allocation_rule" db:"allocation_rule"`         // 0-100% untuk IN
-	SelfTaxFlat       decimal.Decimal `json:"self_tax_flat" db:"self_tax_flat"`             // Rp flat untuk OUT
-	SelfTaxPercentage float64         `json:"self_tax_percentage" db:"self_tax_percentage"` // % untuk OUT
-	IsMain            bool            `json:"is_main" db:"is_main"`                         // Dompet utama
+	AllocationRule    float64         `json:"allocation_rule" db:"allocation_rule"`
+	SelfTaxFlat       decimal.Decimal `json:"self_tax_flat" db:"self_tax_flat"`
+	SelfTaxPercentage float64         `json:"self_tax_percentage" db:"self_tax_percentage"`
+	TargetAmount      decimal.Decimal `json:"target_amount" db:"target_amount"` // Sesuai SQL
+	IsMain            bool            `json:"is_main" db:"is_main"`
+	CreatedAt         time.Time       `json:"created_at" db:"created_at"`
 	DeletedAt         *time.Time      `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
-// Category - Label transaksi (Jajan, Listrik, Modal, dll)
+// Category
 type Category struct {
 	ID        uuid.UUID  `json:"id" db:"id"`
 	OrgID     uuid.UUID  `json:"org_id" db:"org_id"`
 	Name      string     `json:"name" db:"name"`
+	Type      string     `json:"type" db:"type"` // IN / OUT (category_type di SQL)
+	CreatedAt time.Time  `json:"created_at" db:"created_at"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
-// Transaction - Catatan uang masuk (IN) atau keluar (OUT)
+// Transaction
 type Transaction struct {
-	ID          uuid.UUID       `json:"id" db:"id"`
-	OrgID       uuid.UUID       `json:"org_id" db:"org_id"`
-	CategoryID  uuid.UUID       `json:"category_id" db:"category_id"`
-	CreatorID   uuid.UUID       `json:"creator_id" db:"creator_id"`
-	Type        string          `json:"type" db:"type"` // IN / OUT
-	TotalAmount decimal.Decimal `json:"total_amount" db:"total_amount"`
-	Description string          `json:"description" db:"description"`
-	Status      string          `json:"status" db:"status"` // SUCCESS / FAILED
-	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	ID             uuid.UUID       `json:"id" db:"id"`
+	OrgID          uuid.UUID       `json:"org_id" db:"org_id"`
+	CreatorID      uuid.UUID       `json:"creator_id" db:"creator_id"`
+	CategoryID     uuid.UUID       `json:"category_id" db:"category_id"`
+	SourcePocketID *uuid.UUID      `json:"source_pocket_id,omitempty" db:"source_pocket_id"` // FK ke Pockets
+	Type           string          `json:"type" db:"type"`                                   // IN / OUT
+	TotalAmount    decimal.Decimal `json:"total_amount" db:"total_amount"`
+	Description    string          `json:"description" db:"description"`
+	Status         string          `json:"status" db:"status"`
+	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
 }
 
-// TransactionDetail - Pecahan uang yang masuk ke tiap Pocket
+// TransactionDetail
 type TransactionDetail struct {
 	ID            uuid.UUID       `json:"id" db:"id"`
 	TransactionID uuid.UUID       `json:"transaction_id" db:"transaction_id"`
@@ -69,14 +84,15 @@ type TransactionDetail struct {
 	Amount        decimal.Decimal `json:"amount" db:"amount"`
 }
 
-// AuditLog - Catatan aktivitas sensitif (Login, Ganti Tier, dll)
+// AuditLog
 type AuditLog struct {
 	ID         uuid.UUID `json:"id" db:"id"`
 	UserID     uuid.UUID `json:"user_id" db:"user_id"`
 	Action     string    `json:"action" db:"action"`
 	TableName  string    `json:"table_name" db:"table_name"`
 	ResourceID uuid.UUID `json:"resource_id" db:"resource_id"`
-	OldValues  string    `json:"old_values" db:"old_values"` // Simpan sebagai JSON string
-	NewValues  string    `json:"new_values" db:"new_values"` // Simpan sebagai JSON string
+	OldValues  []byte    `json:"old_values" db:"old_values"` // Menggunakan []byte untuk JSONB
+	NewValues  []byte    `json:"new_values" db:"new_values"` // Menggunakan []byte untuk JSONB
+	IPAddress  string    `json:"ip_address" db:"ip_address"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 }
