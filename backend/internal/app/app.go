@@ -23,10 +23,12 @@ func Run() {
 	authService := service.NewAuthService(db, jwtSecret)
 	txService := service.NewTransactionService(db)
 	pocketService := service.NewPocketService(db, auditService)
+	catService := service.NewCategoryService(db, auditService)
 
 	authHandler := handler.NewAuthHandler(authService)
 	txHandler := handler.NewTransactionHandler(txService)
 	pocketHandler := handler.NewPocketHandler(pocketService)
+	catHandler := handler.NewCategoryHandler(catService)
 
 	// 3. Setup Echo
 	e := echo.New()
@@ -38,8 +40,9 @@ func Run() {
 		Echo:               e,
 		AuthHandler:        authHandler,
 		TransactionHandler: txHandler,
-		JwtSecret:          jwtSecret,
 		PocketHandler:      pocketHandler,
+		CategoryHandler:    catHandler,
+		JwtSecret:          jwtSecret,
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))

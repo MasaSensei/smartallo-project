@@ -11,6 +11,7 @@ type RouterConfig struct {
 	AuthHandler        *handler.AuthHandler
 	TransactionHandler *handler.TransactionHandler
 	PocketHandler      *handler.PocketHandler
+	CategoryHandler    *handler.CategoryHandler
 	JwtSecret          string
 }
 
@@ -35,4 +36,9 @@ func SetupRouter(config RouterConfig) {
 		pockets.PUT("/:id", config.PocketHandler.Update)
 	}
 
+	categories := protected.Group("/categories")
+	{
+		categories.POST("", config.CategoryHandler.Create)
+		categories.GET("", config.CategoryHandler.GetAll)
+	}
 }

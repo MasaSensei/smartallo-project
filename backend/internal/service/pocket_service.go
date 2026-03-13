@@ -58,16 +58,20 @@ func (s *PocketService) GetPocketsByOrg(ctx context.Context, orgID string) ([]do
 	return pockets, err
 }
 
-// CreatePocket membuat kantong baru dengan validasi alokasi
 func (s *PocketService) CreatePocket(ctx context.Context, pocket *domain.Pocket) error {
-	// 1. Cek total alokasi saat ini
+	var currentTier string
+	var totalPockets int
+	err := s.db.GetContext(ctx, &currentTier, "SELECT tier FROM users WHERE id = (SELECT owner_id FROM organizations WHERE id = $1)", pocket.OrgID)
+	err = s.db.GetContext(ctx, &totalPockets, "SELECT COUNT(*) FROM pockets WHERE org_id = $1 AND deleted_at IS NULL", pocket.OrgID)
+
+	if currentTier == "FREE" && totalPockets >= 2 {
+		return errors.New("limit kantong tercapai. Silakan upgrade ke PRO untuk membuat lebih banyak kantong")
+	}
+
 	var totalAllocation float64
-	err := s.db.GetContext(ctx, &totalAllocation,
+	err = s.db.GetContext(ctx, &totalAllocation,
 		"SELECT COALESCE(SUM(allocation_rule), 0) FROM pockets WHERE org_id = $1 AND deleted_at IS NULL",
 		pocket.OrgID)
-	if err != nil {
-		return err
-	}
 
 	if totalAllocation+pocket.AllocationRule > 100 {
 		return errors.New("total alokasi kantong tidak boleh melebihi 100%")

@@ -16,11 +16,13 @@ func NewAuditService(db *sqlx.DB) *AuditService {
 }
 
 func (s *AuditService) Log(ctx context.Context, log domain.AuditLog) {
+	userID, _ := ctx.Value("user_id").(string)
+
 	query := `INSERT INTO audit_logs (id, user_id, action, table_name, resource_id, old_values, new_values, ip_address)
 			  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)`
 
 	go s.db.ExecContext(context.Background(), query,
-		log.UserID,
+		userID,
 		log.Action,
 		log.TableName,
 		log.ResourceID,
