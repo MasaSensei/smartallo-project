@@ -19,11 +19,14 @@ func Run() {
 
 	jwtSecret := os.Getenv("JWT_SECRET")
 
+	auditService := service.NewAuditService(db)
 	authService := service.NewAuthService(db, jwtSecret)
 	txService := service.NewTransactionService(db)
+	pocketService := service.NewPocketService(db, auditService)
 
 	authHandler := handler.NewAuthHandler(authService)
 	txHandler := handler.NewTransactionHandler(txService)
+	pocketHandler := handler.NewPocketHandler(pocketService)
 
 	// 3. Setup Echo
 	e := echo.New()
@@ -36,6 +39,7 @@ func Run() {
 		AuthHandler:        authHandler,
 		TransactionHandler: txHandler,
 		JwtSecret:          jwtSecret,
+		PocketHandler:      pocketHandler,
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))

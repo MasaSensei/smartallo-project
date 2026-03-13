@@ -33,7 +33,8 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 		return err
 	}
 
-	if txData.Type == "IN" {
+	switch txData.Type {
+	case "IN":
 		var pockets []domain.Pocket
 		err = dbTx.SelectContext(ctx, &pockets, "SELECT id, allocation_rule FROM pockets WHERE org_id = $1 AND deleted_at IS NULL", txData.OrgID)
 		if err != nil {
@@ -52,7 +53,30 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 			}
 		}
 
-	} else {
+	case "OUT":
+		var sourcePocket domain.Pocket
+		err = dbTx.GetContext(ctx, &sourcePocket, "SELECT * FROM pockets WHERE id = $1", txData.SourcePocketID)
+
+		taxAmount := decimal.Zero
+		if sourcePocket.SelfTaxPercentage > 0 {
+			percent := decimal.NewFromFloat(sourcePocket.SelfTaxPercentage).Div(decimal.NewFromInt(100))
+			taxAmount = txData.TotalAmount.Mul(percent)
+		}
+		taxAmount = taxAmount.Add(sourcePocket.SelfTaxFlat)
+
+		totalDeduction := txData.TotalAmount.Add(taxAmount)
+
+		_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance - $1 WHERE id = $2 AND balance >= $1",
+			totalDeduction, txData.SourcePocketID)
+		if err != nil {
+			return errors.New("saldo tidak cukup (termasuk pajak mandiri)")
+		}
+
+		if taxAmount.GreaterThan(decimal.Zero) {
+			_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance + $1 WHERE org_id = $2 AND is_main = true",
+				taxAmount, txData.OrgID)
+		}
+	default:
 		if txData.SourcePocketID == nil {
 			return errors.New("transaksi keluar wajib memilih sumber kantong")
 		}

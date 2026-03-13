@@ -170,8 +170,48 @@ CREATE TABLE audit_logs (
 
 
 -- =====================================================
--- 11. INDEXES (Performance)
+-- 11. SUBSCRIPTION PLANS (Master Data)
 -- =====================================================
+CREATE TABLE subscription_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL,
+    tier user_tier NOT NULL,
+    price DECIMAL(15,2) NOT NULL,
+    duration_days INT DEFAULT 30,
+    features JSONB,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- 12. SUBSCRIPTION TRANSACTIONS (Billing Logs)
+-- =====================================================
+CREATE TABLE subscription_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    plan_id UUID REFERENCES subscription_plans(id),
+    amount DECIMAL(15,2) NOT NULL,
+    status tx_status DEFAULT 'PENDING',
+    payment_gateway VARCHAR(50),
+    external_id VARCHAR(100), -- ID dari Midtrans/Xendit
+    paid_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- 13. SUBSCRIPTION HISTORY (User Access Control)
+-- =====================================================
+CREATE TABLE subscription_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    plan_id UUID REFERENCES subscription_plans(id),
+    start_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE INDEX idx_sub_hist_user ON subscription_history(user_id);
+CREATE INDEX idx_sub_tx_external ON subscription_transactions(external_id);
 
 CREATE INDEX idx_org_owner
 ON organizations(owner_id);

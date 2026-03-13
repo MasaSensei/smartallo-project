@@ -96,3 +96,35 @@ type AuditLog struct {
 	IPAddress  string    `json:"ip_address" db:"ip_address"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 }
+
+type SubscriptionPlan struct {
+	ID           uuid.UUID       `json:"id" db:"id"`
+	Name         string          `json:"name" db:"name"`
+	Tier         string          `json:"tier" db:"tier"` // FREE, PRO, UMKM
+	Price        decimal.Decimal `json:"price" db:"price"`
+	DurationDays int             `json:"duration_days" db:"duration_days"`
+	Features     []byte          `json:"features" db:"features"` // JSONB fitur
+	IsActive     bool            `json:"is_active" db:"is_active"`
+	CreatedAt    time.Time       `json:"created_at" db:"created_at"`
+}
+
+type SubscriptionTransaction struct {
+	ID             uuid.UUID       `json:"id" db:"id"`
+	UserID         uuid.UUID       `json:"user_id" db:"user_id"`
+	PlanID         uuid.UUID       `json:"plan_id" db:"plan_id"`
+	Amount         decimal.Decimal `json:"amount" db:"amount"`
+	Status         string          `json:"status" db:"status"` // PENDING, SUCCESS, FAILED
+	PaymentGateway string          `json:"payment_gateway" db:"payment_gateway"`
+	ExternalID     string          `json:"external_id" db:"external_id"`
+	PaidAt         *time.Time      `json:"paid_at,omitempty" db:"paid_at"`
+	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
+}
+
+type SubscriptionHistory struct {
+	ID        uuid.UUID `json:"id" db:"id"`
+	UserID    uuid.UUID `json:"user_id" db:"user_id"`
+	PlanID    uuid.UUID `json:"plan_id" db:"plan_id"`
+	StartDate time.Time `json:"start_date" db:"start_date"`
+	EndDate   time.Time `json:"end_date" db:"end_date"`
+	IsActive  bool      `json:"is_active" db:"is_active"`
+}

@@ -9,7 +9,8 @@ import (
 type RouterConfig struct {
 	Echo               *echo.Echo
 	AuthHandler        *handler.AuthHandler
-	TransactionHandler *handler.TransactionHandler // Tambahkan ini
+	TransactionHandler *handler.TransactionHandler
+	PocketHandler      *handler.PocketHandler
 	JwtSecret          string
 }
 
@@ -26,5 +27,12 @@ func SetupRouter(config RouterConfig) {
 	protected.Use(middleware.JWTMiddleware(config.JwtSecret))
 
 	protected.POST("/transactions", config.TransactionHandler.Create)
+	pockets := protected.Group("/pockets")
+	{
+		pockets.POST("", config.PocketHandler.Create)
+		pockets.GET("", config.PocketHandler.GetAll)
+		pockets.GET("/dashboard", config.PocketHandler.GetDashboard)
+		pockets.PUT("/:id", config.PocketHandler.Update)
+	}
 
 }
