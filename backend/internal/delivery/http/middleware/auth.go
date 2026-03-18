@@ -29,6 +29,7 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 
 			c.Set("user_id", claims["user_id"])
 			c.Set("org_id", claims["org_id"])
+			c.Set("role", claims["role"])
 
 			return next(c)
 		}

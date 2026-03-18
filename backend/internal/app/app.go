@@ -17,6 +17,8 @@ func Run() {
 	db := database.ConnectDB()
 	defer db.Close()
 
+	database.SeedDatabase(db)
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	auditService := service.NewAuditService(db)
@@ -24,14 +26,20 @@ func Run() {
 	txService := service.NewTransactionService(db)
 	pocketService := service.NewPocketService(db, auditService)
 	catService := service.NewCategoryService(db, auditService)
+	dashService := service.NewDashboardService(db)
 
 	authHandler := handler.NewAuthHandler(authService)
 	txHandler := handler.NewTransactionHandler(txService)
 	pocketHandler := handler.NewPocketHandler(pocketService)
 	catHandler := handler.NewCategoryHandler(catService)
+	dashHandler := handler.NewDashboardHandler(dashService)
 
-	// 3. Setup Echo
 	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:4200"}, // Port default Angular
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
+
 	e.Use(middleware.Logger(), middleware.Recover())
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
@@ -42,6 +50,7 @@ func Run() {
 		TransactionHandler: txHandler,
 		PocketHandler:      pocketHandler,
 		CategoryHandler:    catHandler,
+		DashboardHandler:   dashHandler,
 		JwtSecret:          jwtSecret,
 	})
 

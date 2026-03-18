@@ -1,0 +1,78 @@
+<div class="owner-dashboard" *ngIf="stats() as data">
+  <header class="header-section">
+    <div class="title-group">
+      <h1>System Intelligence</h1>
+      <span class="badge pulse">{{ data.system_health }}</span>
+    </div>
+  </header>
+
+  <div class="owner-stats">
+    <div class="stat-card">
+      <div class="header">
+        <span class="label">Total Managed Assets</span>
+        <span class="material-icons icon-blue">account_balance</span>
+      </div>
+      <h2 class="value">
+        Rp {{ data.total_managed_assets | number: "1.0-2" }}
+      </h2>
+      <p class="subtext">Across {{ data.total_organizations }} Organizations</p>
+    </div>
+
+    <div class="stat-card">
+      <div class="header">
+        <span class="label">Total Users</span>
+        <span class="material-icons icon-emerald">group</span>
+      </div>
+      <h2 class="value">{{ data.total_active_users | number }}</h2>
+      <p class="subtext">Active in system</p>
+    </div>
+
+    <div class="stat-card">
+      <div class="header">
+        <span class="label">System Health</span>
+        <span class="material-icons icon-purple">bolt</span>
+      </div>
+      <h2 class="value">99.9%</h2>
+      <p class="subtext">All systems operational</p>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="data-table-card card">
+      <div class="card-header">
+        <h3>Top Performing Organizations</h3>
+        <button class="btn-text">Manage All</button>
+      </div>
+      <table class="owner-table">
+        <thead>
+          <tr>
+            <th>Organization</th>
+            <th>Tier</th>
+            <th>Activity (30d)</th>
+            <th>Users</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let org of data.top_organizations">
+            <td>
+              <div class="org-name"><span>🏢</span> {{ org.name }}</div>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="org.tier.toLowerCase()">{{
+                org.tier
+              }}</span>
+            </td>
+            <td>Rp {{ org.monthly_volume | number: "1.0-0" }}</td>
+            <td>{{ org.user_count }} Members</td>
+            <td><span class="status-pill active">Healthy</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="activity-card card">
+      <h3>System Logs</h3>
+    </div>
+  </div>
+</div>

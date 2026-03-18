@@ -23,7 +23,7 @@ func NewPocketService(db *sqlx.DB, audit *AuditService) *PocketService {
 	}
 }
 
-type DashboardSummary struct {
+type PocketSummary struct {
 	PocketName   string          `json:"pocket_name" db:"name"`
 	Balance      decimal.Decimal `json:"balance" db:"balance"`
 	TargetAmount decimal.Decimal `json:"target_amount" db:"target_amount"`
@@ -31,8 +31,8 @@ type DashboardSummary struct {
 }
 
 // GetDashboard mengambil ringkasan saldo dan progress target
-func (s *PocketService) GetDashboard(ctx context.Context, orgID string) ([]DashboardSummary, error) {
-	var summaries []DashboardSummary
+func (s *PocketService) GetDashboard(ctx context.Context, orgID string) ([]PocketSummary, error) {
+	var summaries []PocketSummary
 	query := `SELECT name, balance, target_amount FROM pockets WHERE org_id = $1 AND deleted_at IS NULL`
 
 	err := s.db.SelectContext(ctx, &summaries, query, orgID)

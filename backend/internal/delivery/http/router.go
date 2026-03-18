@@ -12,6 +12,7 @@ type RouterConfig struct {
 	TransactionHandler *handler.TransactionHandler
 	PocketHandler      *handler.PocketHandler
 	CategoryHandler    *handler.CategoryHandler
+	DashboardHandler   *handler.DashboardHandler
 	JwtSecret          string
 }
 
@@ -42,5 +43,11 @@ func SetupRouter(config RouterConfig) {
 	{
 		categories.POST("", config.CategoryHandler.Create)
 		categories.GET("", config.CategoryHandler.GetAll)
+	}
+
+	dashboard := protected.Group("/dashboard")
+	{
+		dashboard.GET("/main", config.DashboardHandler.GetMainDashboard)
+		dashboard.GET("/owner/intelligence", config.DashboardHandler.GetOwnerDashboard, middleware.IsSuperAdmin)
 	}
 }

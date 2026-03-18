@@ -17,6 +17,7 @@ func NewAuthHandler(as *service.AuthService) *AuthHandler {
 
 func (h *AuthHandler) Route(g *echo.Group) {
 	g.POST("/register", h.Register)
+	g.POST("/login", h.Login)
 }
 
 type registerRequest struct {

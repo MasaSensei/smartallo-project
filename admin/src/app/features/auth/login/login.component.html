@@ -1,0 +1,64 @@
+<div class="login-container">
+  <div
+    class="toast-container"
+    [class.show]="toastMessage()"
+    [class.error]="toastType() === 'error'"
+    [class.success]="toastType() === 'success'"
+  >
+    <span class="material-icons">{{
+      toastType() === "success" ? "check_circle" : "error"
+    }}</span>
+    {{ toastMessage() }}
+  </div>
+
+  <div class="login-card">
+    <header>
+      <div class="logo-icon">
+        <span class="material-icons">account_balance_wallet</span>
+      </div>
+      <h1>SmartAllo</h1>
+      <p>Owner Secure Access</p>
+    </header>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>Personal Email</label>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="Enter owner email"
+          [disabled]="isLoading()"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Security Password</label>
+        <div class="password-wrapper">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            [disabled]="isLoading()"
+          />
+          <button type="button" class="toggle-btn" (click)="togglePassword()">
+            <span class="material-icons">{{
+              showPassword() ? "visibility_off" : "visibility"
+            }}</span>
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="loginForm.invalid || isLoading()"
+      >
+        <ng-container *ngIf="!isLoading()"> Unlock Dashboard </ng-container>
+        <ng-container *ngIf="isLoading()">
+          <div class="spinner"></div>
+          Verifying...
+        </ng-container>
+      </button>
+    </form>
+  </div>
+</div>
