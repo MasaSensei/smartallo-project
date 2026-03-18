@@ -59,13 +59,14 @@ func (s *PocketService) GetPocketsByOrg(ctx context.Context, orgID string) ([]do
 }
 
 func (s *PocketService) CreatePocket(ctx context.Context, pocket *domain.Pocket) error {
-	var currentTier string
-	var totalPockets int
-	err := s.db.GetContext(ctx, &currentTier, "SELECT tier FROM users WHERE id = (SELECT owner_id FROM organizations WHERE id = $1)", pocket.OrgID)
-	err = s.db.GetContext(ctx, &totalPockets, "SELECT COUNT(*) FROM pockets WHERE org_id = $1 AND deleted_at IS NULL", pocket.OrgID)
+	var tier string
+	var currentPocketCount int
 
-	if currentTier == "FREE" && totalPockets >= 2 {
-		return errors.New("limit kantong tercapai. Silakan upgrade ke PRO untuk membuat lebih banyak kantong")
+	err := s.db.GetContext(ctx, &tier, "SELECT tier FROM users WHERE id = (SELECT owner_id FROM organizations WHERE id = $1)", pocket.OrgID)
+	err = s.db.GetContext(ctx, &currentPocketCount, "SELECT COUNT(*) FROM pockets WHERE org_id = $1 AND deleted_at IS NULL", pocket.OrgID)
+
+	if tier == "FREE" && currentPocketCount >= 2 {
+		return errors.New("limit kantong tercapai. Upgrade ke PRO untuk menambah lebih dari 2 kantong!")
 	}
 
 	var totalAllocation float64
@@ -84,7 +85,6 @@ func (s *PocketService) CreatePocket(ctx context.Context, pocket *domain.Pocket)
 
 	_, err = s.db.ExecContext(ctx, query, newID, pocket.OrgID, pocket.Name, pocket.AllocationRule, pocket.TargetAmount, false)
 
-	// 3. Audit Log (Async)
 	if err == nil {
 		s.auditService.Log(ctx, domain.AuditLog{
 			Action:     "CREATE_POCKET",

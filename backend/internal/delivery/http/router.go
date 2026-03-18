@@ -18,16 +18,18 @@ type RouterConfig struct {
 func SetupRouter(config RouterConfig) {
 	api := config.Echo.Group("/api/v1")
 
-	// --- Public Routes ---
 	auth := api.Group("/auth")
 	config.AuthHandler.Route(auth)
 
-	// --- Protected Routes (Butuh Login) ---
-	// Gunakan middleware yang sudah kamu buat
 	protected := api.Group("")
 	protected.Use(middleware.JWTMiddleware(config.JwtSecret))
 
-	protected.POST("/transactions", config.TransactionHandler.Create)
+	transactions := protected.Group("/transactions")
+	{
+		transactions.POST("", config.TransactionHandler.Create)
+		transactions.GET("/history", config.TransactionHandler.GetHistory)
+	}
+
 	pockets := protected.Group("/pockets")
 	{
 		pockets.POST("", config.PocketHandler.Create)

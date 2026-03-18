@@ -38,3 +38,14 @@ func (h *TransactionHandler) Create(c echo.Context) error {
 		"message": "Transaksi berhasil diproses dan saldo otomatis terbagi!",
 	})
 }
+
+func (h *TransactionHandler) GetHistory(c echo.Context) error {
+	orgID := c.Get("org_id").(string)
+
+	history, err := h.txService.GetHistory(c.Request().Context(), orgID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, history)
+}

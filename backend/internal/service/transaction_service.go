@@ -28,7 +28,11 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 	txData.ID = uuid.New()
 	queryTx := `INSERT INTO transactions (id, org_id, creator_id, category_id, source_pocket_id, type, total_amount, description) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err = dbTx.ExecContext(ctx, queryTx, txData.ID, txData.OrgID, txData.CreatorID, txData.CategoryID, txData.SourcePocketID, txData.Type, txData.TotalAmount, txData.Description)
+
+	_, err = dbTx.ExecContext(ctx, queryTx,
+		txData.ID, txData.OrgID, txData.CreatorID, txData.CategoryID,
+		txData.SourcePocketID, txData.Type, txData.TotalAmount, txData.Description,
+	)
 	if err != nil {
 		return err
 	}
@@ -46,16 +50,23 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 				rule := decimal.NewFromFloat(p.AllocationRule).Div(decimal.NewFromInt(100))
 				amountToPocket := txData.TotalAmount.Mul(rule)
 
-				_, err = dbTx.ExecContext(ctx, "INSERT INTO transaction_details (transaction_id, pocket_id, amount) VALUES ($1, $2, $3)",
+				dbTx.ExecContext(ctx, "INSERT INTO transaction_details (transaction_id, pocket_id, amount) VALUES ($1, $2, $3)",
 					txData.ID, p.ID, amountToPocket)
 
-				_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance + $1 WHERE id = $2", amountToPocket, p.ID)
+				dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance + $1 WHERE id = $2", amountToPocket, p.ID)
 			}
 		}
 
 	case "OUT":
+		if txData.SourcePocketID == nil {
+			return errors.New("transaksi keluar wajib memilih sumber kantong")
+		}
+
 		var sourcePocket domain.Pocket
 		err = dbTx.GetContext(ctx, &sourcePocket, "SELECT * FROM pockets WHERE id = $1", txData.SourcePocketID)
+		if err != nil {
+			return errors.New("kantong sumber tidak ditemukan")
+		}
 
 		taxAmount := decimal.Zero
 		if sourcePocket.SelfTaxPercentage > 0 {
@@ -76,19 +87,24 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 			_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance + $1 WHERE org_id = $2 AND is_main = true",
 				taxAmount, txData.OrgID)
 		}
-	default:
-		if txData.SourcePocketID == nil {
-			return errors.New("transaksi keluar wajib memilih sumber kantong")
-		}
 
-		_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance - $1 WHERE id = $2 AND balance >= $1", txData.TotalAmount, txData.SourcePocketID)
-		if err != nil {
-			return errors.New("saldo tidak mencukupi atau kantong tidak ditemukan")
-		}
-
-		_, err = dbTx.ExecContext(ctx, "INSERT INTO transaction_details (transaction_id, pocket_id, amount) VALUES ($1, $2, $3)",
+		dbTx.ExecContext(ctx, "INSERT INTO transaction_details (transaction_id, pocket_id, amount) VALUES ($1, $2, $3)",
 			txData.ID, txData.SourcePocketID, txData.TotalAmount)
+
+	default:
+		return errors.New("tipe transaksi tidak dikenal (harus IN atau OUT)")
 	}
 
 	return dbTx.Commit()
+}
+
+func (s *TransactionService) GetHistory(ctx context.Context, orgID string) ([]domain.Transaction, error) {
+	var history []domain.Transaction
+	query := `SELECT t.*, c.name as category_name 
+			  FROM transactions t
+			  LEFT JOIN categories c ON t.category_id = c.id
+			  WHERE t.org_id = $1 ORDER BY t.created_at DESC`
+
+	err := s.db.SelectContext(ctx, &history, query, orgID)
+	return history, err
 }
