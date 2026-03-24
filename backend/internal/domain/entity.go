@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -103,7 +104,7 @@ type SubscriptionPlan struct {
 	Tier         string          `json:"tier" db:"tier"` // FREE, PRO, UMKM
 	Price        decimal.Decimal `json:"price" db:"price"`
 	DurationDays int             `json:"duration_days" db:"duration_days"`
-	Features     []byte          `json:"features" db:"features"` // JSONB fitur
+	Features     json.RawMessage `json:"features" db:"features"`
 	IsActive     bool            `json:"is_active" db:"is_active"`
 	CreatedAt    time.Time       `json:"created_at" db:"created_at"`
 }

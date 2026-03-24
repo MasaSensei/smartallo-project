@@ -27,12 +27,14 @@ func Run() {
 	pocketService := service.NewPocketService(db, auditService)
 	catService := service.NewCategoryService(db, auditService)
 	dashService := service.NewDashboardService(db)
+	subscriptionService := service.NewSubscriptionService(db)
 
 	authHandler := handler.NewAuthHandler(authService)
 	txHandler := handler.NewTransactionHandler(txService)
 	pocketHandler := handler.NewPocketHandler(pocketService)
 	catHandler := handler.NewCategoryHandler(catService)
 	dashHandler := handler.NewDashboardHandler(dashService)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -45,13 +47,14 @@ func Run() {
 
 	// 4. Panggil Router Terpisah
 	http.SetupRouter(http.RouterConfig{
-		Echo:               e,
-		AuthHandler:        authHandler,
-		TransactionHandler: txHandler,
-		PocketHandler:      pocketHandler,
-		CategoryHandler:    catHandler,
-		DashboardHandler:   dashHandler,
-		JwtSecret:          jwtSecret,
+		Echo:                e,
+		AuthHandler:         authHandler,
+		TransactionHandler:  txHandler,
+		PocketHandler:       pocketHandler,
+		CategoryHandler:     catHandler,
+		DashboardHandler:    dashHandler,
+		SubscriptionHandler: subscriptionHandler,
+		JwtSecret:           jwtSecret,
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))

@@ -1,0 +1,502 @@
+// billing-control.component.scss
+
+// --- 1. VARIABLES (Sultan Theme Palette) ---
+$bg-dark: #0b0f1a;
+$bg-card: rgba(30, 41, 59, 0.4);
+$accent-primary: #6366f1; // Indigo
+$accent-success: #10b981; // Emerald
+$accent-warning: #f59e0b; // Amber
+$accent-danger: #ef4444; // Rose
+$text-main: #f8fafc;
+$text-muted: #94a3b8;
+$glass-border: rgba(255, 255, 255, 0.08);
+
+.billing-page {
+  padding: 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+
+  // --- HEADER SECTION ---
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+
+    .header-content {
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: $text-main;
+
+        .text-gradient {
+          background: linear-gradient(135deg, $accent-primary, #a855f7);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+      }
+      p {
+        font-size: 1.1rem;
+        color: $text-muted;
+      }
+    }
+
+    .btn-create {
+      background: $accent-primary;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.8rem;
+      border-radius: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 20px rgba($accent-primary, 0.2);
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba($accent-primary, 0.4);
+        filter: brightness(1.1);
+      }
+
+      .material-icons {
+        font-size: 20px;
+      }
+    }
+  }
+
+  // --- TABS NAVIGATION ---
+  .tabs-navigation {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 2.5rem;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 0.6rem;
+    border-radius: 16px;
+    width: fit-content;
+    border: 1px solid $glass-border;
+
+    button {
+      background: transparent;
+      border: none;
+      color: $text-muted;
+      padding: 0.8rem 1.5rem;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s ease;
+
+      .material-icons {
+        font-size: 18px;
+      }
+
+      &:hover {
+        color: $text-main;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      &.active {
+        background: $accent-primary;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+    }
+  }
+
+  // --- PLANS GRID ---
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 2rem;
+  }
+
+  .plan-card {
+    background: $bg-card;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid $glass-border;
+    border-radius: 30px;
+    padding: 2.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.4s ease;
+
+    &:hover {
+      transform: translateY(-10px);
+      border-color: rgba($accent-primary, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    // Tier specific accents
+    &.pro {
+      border-top: 4px solid $accent-primary;
+    }
+    &.umkm {
+      border-top: 4px solid $accent-warning;
+    }
+    &.free {
+      border-top: 4px solid $text-muted;
+    }
+
+    .plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+
+      h3 {
+        font-size: 1.5rem;
+        margin: 0;
+        color: $text-main;
+      }
+
+      .tier-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 8px;
+        letter-spacing: 0.05em;
+        background: rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    .plan-price {
+      margin-bottom: 2rem;
+      .currency {
+        font-size: 1.2rem;
+        color: $text-muted;
+        font-weight: 500;
+      }
+      .amount {
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: $text-main;
+        margin: 0 4px;
+      }
+      .period {
+        color: $text-muted;
+        font-size: 0.95rem;
+      }
+    }
+
+    .features-box {
+      flex-grow: 1;
+      margin-bottom: 2rem;
+
+      small {
+        display: block;
+        color: $text-muted;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        li {
+          color: $text-main;
+          font-size: 0.95rem;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          &::before {
+            content: "✓";
+            color: $accent-success;
+            font-weight: bold;
+          }
+        }
+      }
+    }
+
+    .plan-footer {
+      margin-top: auto; // Biar nempel di bawah card
+      padding-top: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+
+      .card-glow {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          rgba($accent-primary, 0.05) 0%,
+          transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
+
+      &:hover .card-glow {
+        opacity: 1;
+      }
+
+      .action-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      // Tombol Icon Glass Style
+      .btn-icon-glass {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: $text-muted;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(5px);
+
+        .material-icons {
+          font-size: 18px;
+        }
+
+        &:hover {
+          background: rgba($accent-primary, 0.1);
+          color: $accent-primary;
+          border-color: rgba($accent-primary, 0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba($accent-primary, 0.2);
+        }
+
+        &.delete:hover {
+          background: rgba($accent-danger, 0.1);
+          color: $accent-danger;
+          border-color: rgba($accent-danger, 0.3);
+          box-shadow: 0 5px 15px rgba($accent-danger, 0.2);
+        }
+      }
+
+      // Status Pill mewah
+      .status-toggle-pill {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: $text-muted;
+        padding: 8px 16px;
+        border-radius: 100px; // Capsule shape
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #4b5563; // Default gray
+          transition: all 0.3s ease;
+        }
+
+        &.is-active {
+          background: rgba($accent-success, 0.08);
+          color: $accent-success;
+          border-color: rgba($accent-success, 0.2);
+
+          .dot {
+            background: $accent-success;
+            box-shadow: 0 0 8px $accent-success;
+          }
+
+          &:hover {
+            background: rgba($accent-success, 0.15);
+            transform: scale(1.05);
+          }
+        }
+
+        &:not(.is-active):hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: $text-main;
+        }
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+
+      button {
+        flex: 1;
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.2s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-edit {
+        background: rgba(255, 255, 255, 0.05);
+        color: $text-main;
+        border: 1px solid $glass-border;
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      .btn-toggle {
+        background: rgba($accent-success, 0.1);
+        color: $accent-success;
+        border: 1px solid rgba($accent-success, 0.2);
+        &:hover {
+          background: rgba($accent-success, 0.2);
+        }
+      }
+    }
+  }
+
+  // --- HISTORY TABLE ---
+  .table-container {
+    background: $bg-card;
+    border-radius: 24px;
+    border: 1px solid $glass-border;
+    overflow: hidden;
+    animation: slideUp 0.5s ease;
+  }
+
+  .modern-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+      background: rgba(15, 23, 42, 0.8);
+      th {
+        padding: 1.5rem;
+        text-align: left;
+        color: $text-muted;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        transition: background 0.2s;
+        &:hover {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+
+      td {
+        padding: 1.5rem;
+        color: $text-main;
+        font-size: 0.95rem;
+
+        &.td-amount {
+          font-weight: 700;
+          color: $text-main;
+        }
+        .external-id {
+          font-family: "JetBrains Mono", monospace;
+          color: $accent-primary;
+          background: rgba($accent-primary, 0.1);
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+
+  // --- STATUS BADGES ---
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    &::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    &.status-success {
+      background: rgba($accent-success, 0.15);
+      color: $accent-success;
+      &::before {
+        background: $accent-success;
+        box-shadow: 0 0 10px $accent-success;
+      }
+    }
+
+    &.status-pending {
+      background: rgba($accent-warning, 0.15);
+      color: $accent-warning;
+      &::before {
+        background: $accent-warning;
+        box-shadow: 0 0 10px $accent-warning;
+      }
+    }
+
+    &.status-failed {
+      background: rgba($accent-danger, 0.15);
+      color: $accent-danger;
+      &::before {
+        background: $accent-danger;
+        box-shadow: 0 0 10px $accent-danger;
+      }
+    }
+  }
+
+  .hidden {
+    display: none !important;
+  }
+}
+
+// --- ANIMATIONS ---
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

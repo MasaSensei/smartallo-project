@@ -58,3 +58,16 @@ func (s *SubscriptionService) ActivateSubscription(ctx context.Context, userID u
 
 	return tx.Commit()
 }
+
+func (s *SubscriptionService) UpdatePlan(ctx context.Context, id uuid.UUID, plan *domain.SubscriptionPlan) error {
+	query := `UPDATE subscription_plans SET name=$1, tier=$2, price=$3, duration_days=$4, features=$5, is_active=$6 WHERE id=$7`
+	_, err := s.db.ExecContext(ctx, query, plan.Name, plan.Tier, plan.Price, plan.DurationDays, plan.Features, plan.IsActive, id)
+	return err
+}
+
+func (s *SubscriptionService) DeletePlan(ctx context.Context, id uuid.UUID) error {
+	// Kita pakai soft delete (is_active = false) supaya data history transaksi tidak pecah
+	query := `UPDATE subscription_plans SET is_active = false WHERE id = $1`
+	_, err := s.db.ExecContext(ctx, query, id)
+	return err
+}

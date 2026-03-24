@@ -7,13 +7,14 @@ import (
 )
 
 type RouterConfig struct {
-	Echo               *echo.Echo
-	AuthHandler        *handler.AuthHandler
-	TransactionHandler *handler.TransactionHandler
-	PocketHandler      *handler.PocketHandler
-	CategoryHandler    *handler.CategoryHandler
-	DashboardHandler   *handler.DashboardHandler
-	JwtSecret          string
+	Echo                *echo.Echo
+	AuthHandler         *handler.AuthHandler
+	TransactionHandler  *handler.TransactionHandler
+	PocketHandler       *handler.PocketHandler
+	CategoryHandler     *handler.CategoryHandler
+	DashboardHandler    *handler.DashboardHandler
+	SubscriptionHandler *handler.SubscriptionHandler
+	JwtSecret           string
 }
 
 func SetupRouter(config RouterConfig) {
@@ -49,5 +50,21 @@ func SetupRouter(config RouterConfig) {
 	{
 		dashboard.GET("/main", config.DashboardHandler.GetMainDashboard)
 		dashboard.GET("/owner/intelligence", config.DashboardHandler.GetOwnerDashboard, middleware.IsSuperAdmin)
+	}
+
+	customerSub := protected.Group("/subscriptions")
+	{
+		// User cuma bisa LIHAT plan yang aktif
+		customerSub.GET("/plans", config.SubscriptionHandler.GetAllPlans)
+
+		// User melakukan pembayaran/checkout
+		customerSub.POST("/subscribe", config.SubscriptionHandler.ActivateSubscription)
+	}
+
+	adminSub := protected.Group("/admin/subscriptions", middleware.IsSuperAdmin)
+	{
+		adminSub.POST("/plans", config.SubscriptionHandler.CreatePlan)       // Tambah Plan
+		adminSub.PUT("/plans/:id", config.SubscriptionHandler.UpdatePlan)    // Edit Plan
+		adminSub.DELETE("/plans/:id", config.SubscriptionHandler.DeletePlan) // Hapus Plan
 	}
 }

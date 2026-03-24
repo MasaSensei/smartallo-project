@@ -24,21 +24,24 @@ export class MainLayoutComponent {
   private router = inject(Router);
 
   menuItems: MenuItem[] = [
-    { path: '/dashboard', icon: 'analytics', label: 'System Intel' },
-    { path: '/organizations', icon: 'corporate_fare', label: 'Organizations' },
+    { path: '/dashboard', icon: 'analytics', label: 'System Intel' }, // Liat total perputaran uang global
+
+    // --- CORE DATA ---
+    { path: '/organizations', icon: 'corporate_fare', label: 'Books/Entities' }, // Daftar "Buku Tabungan" yang terdaftar
     {
       path: '/user-management',
       icon: 'manage_accounts',
-      label: 'User Control',
+      label: 'Account Holders',
     },
 
-    // --- MENU BARU ---
-    { path: '/billing-control', icon: 'payments', label: 'Billing & Plans' },
-    // -----------------
+    // --- REVENUE ---
+    { path: '/billing-control', icon: 'payments', label: 'Plans & Quotas' }, // Atur harga langganan & limit catat
 
-    { path: '/system-logs', icon: 'terminal', label: 'System Logs' },
-    { path: '/settings', icon: 'tune', label: 'System Config' },
+    // --- RELIABILITY ---
+    { path: '/system-logs', icon: 'terminal', label: 'Audit Trail' }, // Siapa catat apa, biar nggak ada manipulasi
+    { path: '/settings', icon: 'tune', label: 'App Config' }, // Ganti bunga (kalau ada), maintenance, dll
   ];
+
   onLogout() {
     localStorage.removeItem('token');
     this.router.navigate(['/login']);

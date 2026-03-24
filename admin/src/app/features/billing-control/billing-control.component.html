@@ -1,0 +1,155 @@
+<div class="billing-page">
+  <div class="sultan-toast" *ngIf="toastMessage()" [ngClass]="toastType()">
+    {{ toastMessage() }}
+  </div>
+
+  <header class="page-header">
+    <div class="header-content">
+      <h1>Subscription <span class="text-gradient">Intelligence</span></h1>
+      <p>Configure plans and monitor your revenue flow.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-create" (click)="openCreateModal()">
+        <span class="material-icons">add_circle</span> Create New Plan
+      </button>
+    </div>
+  </header>
+
+  <nav class="tabs-navigation">
+    <button
+      [class.active]="activeTab() === 'plans'"
+      (click)="activeTab.set('plans')"
+    >
+      <span class="material-icons">inventory_2</span> Master Plans
+    </button>
+    <button
+      [class.active]="activeTab() === 'history'"
+      (click)="activeTab.set('history')"
+    >
+      <span class="material-icons">history_toggle_off</span> Payment History
+    </button>
+  </nav>
+
+  <main class="main-content">
+    <div
+      class="plans-container"
+      [class.hidden]="activeTab() !== 'plans'"
+      [@fadeIn]
+    >
+      <div class="plans-grid">
+        <div
+          class="plan-card"
+          *ngFor="let plan of plans()"
+          [ngClass]="plan.tier.toLowerCase()"
+        >
+          <div class="card-glow"></div>
+          <div class="plan-header">
+            <div class="tier-badge">{{ plan.tier }}</div>
+            <h3>{{ plan.name }}</h3>
+          </div>
+
+          <div class="plan-price">
+            <ng-container *ngIf="plan.price > 0; else freePrice">
+              <span class="currency">Rp</span>
+              <span class="amount">{{ plan.price | number }}</span>
+            </ng-container>
+            <ng-template #freePrice>
+              <span class="amount text-gradient">FREE</span>
+            </ng-template>
+
+            <span class="period">
+              <ng-container [ngSwitch]="plan.duration_days">
+                <span *ngSwitchCase="0">/ Lifetime</span>
+                <span *ngSwitchCase="30">/ Monthly</span>
+                <span *ngSwitchCase="365">/ Yearly</span>
+                <span *ngSwitchDefault>/ {{ plan.duration_days }} Days</span>
+              </ng-container>
+            </span>
+          </div>
+
+          <div class="plan-features">
+            <div class="feature-tag" *ngFor="let f of plan.parsedFeatures">
+              <span class="material-icons">check</span> {{ f }}
+            </div>
+          </div>
+
+          <div class="plan-footer">
+            <div class="action-group">
+              <button
+                class="btn-icon-glass edit"
+                (click)="selectedPlan.set(plan); showModal.set(true)"
+              >
+                <span class="material-icons">edit</span>
+              </button>
+              <button
+                class="btn-icon-glass delete"
+                (click)="handleDelete(plan.id)"
+              >
+                <span class="material-icons">block</span>
+              </button>
+            </div>
+
+            <button
+              class="status-toggle-pill"
+              [class.is-active]="plan.is_active"
+              (click)="toggleStatus(plan)"
+            >
+              <span class="dot"></span>
+              {{ plan.is_active ? "Active" : "Disabled" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="history-container"
+      [class.hidden]="activeTab() !== 'history'"
+      [@fadeIn]
+    >
+      <div class="table-wrapper">
+        <table class="banking-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Transaction ID</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trx of transactions()">
+              <td class="td-date">
+                <span class="date">{{
+                  trx.created_at | date: "dd MMM yyyy"
+                }}</span>
+                <span class="time">{{ trx.created_at | date: "HH:mm" }}</span>
+              </td>
+              <td>
+                <code class="ext-id">{{ trx.external_id }}</code>
+              </td>
+              <td class="td-amount">Rp {{ trx.amount | number }}</td>
+              <td>
+                <span class="gateway-tag">{{ trx.payment_gateway }}</span>
+              </td>
+              <td>
+                <div class="status-pill" [ngClass]="getBadgeClass(trx.status)">
+                  <span class="dot"></span> {{ trx.status }}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<app-subscription-form
+  *ngIf="showModal()"
+  [planData]="selectedPlan()"
+  (close)="showModal.set(false)"
+  (save)="handleSave($event)"
+>
+</app-subscription-form>
