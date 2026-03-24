@@ -8,9 +8,9 @@ class PocketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double progress = pocket['balance'] / pocket['target'];
+    // Kita hapus logika progress & target
     return Container(
-      width: 300,
+      width: 260, // Sedikit diperkecil agar pas di layar
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -18,40 +18,81 @@ class PocketCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [pocket['color'], pocket['color'].withOpacity(0.7)],
+          colors: [
+            pocket['color'] ?? Colors.blueGrey,
+            (pocket['color'] as Color).withOpacity(0.6),
+          ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: (pocket['color'] as Color).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            pocket['name'],
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+          // Row atas untuk Nama & Icon kecil
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  pocket['name'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ],
           ),
-          AmountText(
-            pocket['balance'],
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+
+          // Bagian Saldo
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "${(progress * 100).toInt()}% dari target",
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              const Text(
+                "Saldo saat ini",
+                style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.white24,
-                valueColor: const AlwaysStoppedAnimation(Colors.white),
-                minHeight: 6,
+              const SizedBox(height: 4),
+              AmountText(
+                pocket['balance'],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
+          ),
+
+          // Badge Status (Pengganti Progress Bar agar tidak kosong)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              "Aktif",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

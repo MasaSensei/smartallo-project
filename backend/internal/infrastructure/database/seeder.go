@@ -16,26 +16,36 @@ func SeedDatabase(db *sqlx.DB) {
 
 func seedSuperAdmin(db *sqlx.DB) {
 	var count int
+	// Cek berdasarkan email
 	db.Get(&count, "SELECT count(*) FROM users WHERE email = $1", "owner@smartallo.com")
 
 	if count == 0 {
-		// 1. Buat User Admin
 		userID := uuid.New()
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 
-		tx := db.MustBegin() // Pakai Transaction biar aman
+		tx := db.MustBegin()
 
-		tx.MustExec(`INSERT INTO users (id, email, password_hash, role, tier, created_at) 
-                     VALUES ($1, $2, $3, $4, $5, $6)`,
-			userID, "owner@smartallo.com", string(hashedPassword), "SUPERADMIN", "PRO", time.Now())
+		// 1. Buat User Admin dengan USERNAME
+		// Tambahkan kolom 'username' dan value 'admin_hasan' (atau apa saja)
+		queryUser := `INSERT INTO users (id, username, email, password_hash, role, tier, created_at) 
+                      VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-		// 2. Buat Organization (PENTING: Biar JOIN di Login berhasil)
+		tx.MustExec(queryUser,
+			userID,
+			"admin_hasan", // <--- Username baru
+			"owner@smartallo.com",
+			string(hashedPassword),
+			"SUPERADMIN",
+			"PRO",
+			time.Now())
+
+		// 2. Buat Organization
 		orgID := uuid.New()
 		tx.MustExec(`INSERT INTO organizations (id, owner_id, name, type) 
                      VALUES ($1, $2, $3, $4)`,
 			orgID, userID, "SmartAllo HQ", "PERSONAL")
 
-		// 3. Buat Main Pocket (Biar dashboard langsung ada saldo 0)
+		// 3. Buat Main Pocket
 		tx.MustExec(`INSERT INTO pockets (id, org_id, name, balance, is_main) 
                      VALUES ($1, $2, $3, $4, $5)`,
 			uuid.New(), orgID, "Kantong Utama", 0, true)
@@ -44,7 +54,7 @@ func seedSuperAdmin(db *sqlx.DB) {
 		if err != nil {
 			log.Println("❌ Gagal Seed:", err)
 		} else {
-			fmt.Println("✅ SuperAdmin & Org Created: owner@smartallo.com")
+			fmt.Println("✅ SuperAdmin Created: admin_hasan (owner@smartallo.com)")
 		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 // User
 type User struct {
 	ID           uuid.UUID  `json:"id" db:"id"`
+	Username     string     `json:"username" db:"username"`
 	Email        string     `json:"email" db:"email"`
 	PasswordHash string     `json:"-" db:"password_hash"`
 	Role         string     `json:"role" db:"role"`

@@ -6,6 +6,7 @@ import '../../../core/widgets/amount_text.dart';
 import '../../../core/widgets/transaction_tile.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/pocket_card.dart';
+import '../widgets/add_transaction_sheet.dart'; // Pastikan import sheet-nya
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -13,6 +14,7 @@ class DashboardView extends GetView<DashboardController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Latar gelap yang lebih solid
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -25,22 +27,14 @@ class DashboardView extends GetView<DashboardController> {
               _buildPocketCarousel(),
               _buildSectionTitle("Aktivitas Terakhir"),
               _buildTransactionList(),
-              const SizedBox(height: 100), // Spasi agar tidak tertutup FAB
+              const SizedBox(
+                height: 120,
+              ), // Spasi ekstra agar FAB tidak menutupi list
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Open Bottom Sheet Input Transaksi
-        },
-        backgroundColor: AppTheme.primary,
-        icon: const Icon(Icons.add_task_rounded, color: Colors.white),
-        label: const Text(
-          "Catat Nabung",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
+      floatingActionButton: _buildFAB(),
     );
   }
 
@@ -67,6 +61,7 @@ class DashboardView extends GetView<DashboardController> {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -101,44 +96,50 @@ class DashboardView extends GetView<DashboardController> {
 
   Widget _buildChartSection() {
     return Container(
-      height: 180,
+      height: 220,
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Statistik Mingguan",
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Aktivitas Mingguan", // Judul baru
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Icon(Icons.bar_chart_rounded, color: AppTheme.primary, size: 18),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Expanded(
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 20,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: const FlTitlesData(
-                  show: false,
-                ), // Hide titles for cleaner look
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barGroups: [
-                  _makeGroupData(0, 12, AppTheme.primary),
-                  _makeGroupData(1, 18, AppTheme.success),
-                  _makeGroupData(2, 6, AppTheme.primary),
-                  _makeGroupData(3, 15, AppTheme.primary),
-                  _makeGroupData(4, 9, AppTheme.danger),
-                  _makeGroupData(5, 11, AppTheme.primary),
-                ],
+            child: Obx(
+              () => BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: 100, // Sekarang kita pakai data visual saja
+                  barTouchData: BarTouchData(enabled: true),
+                  titlesData: const FlTitlesData(show: false),
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _chartGroups(),
+                ),
               ),
             ),
           ),
@@ -147,22 +148,31 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  BarChartGroupData _makeGroupData(int x, double y, Color color) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: color,
-          width: 14,
-          borderRadius: BorderRadius.circular(4),
-          backDrawRodData: BackgroundBarChartRodData(
-            show: true,
-            toY: 20,
-            color: Colors.white.withOpacity(0.05),
+  List<BarChartGroupData> _chartGroups() {
+    // Kita pakai data visual statis dulu untuk merepresentasikan aktivitas
+    // Bar terakhir sengaja dibuat menonjol sebagai "Hari Ini"
+    List<double> visualData = [45, 70, 35, 90, 60, 50, 80];
+
+    return List.generate(
+      visualData.length,
+      (i) => BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: visualData[i],
+            // Warna bar terakhir (index 6) dibuat solid, sisanya agak transparan
+            color:
+                i == 6 ? AppTheme.primary : AppTheme.primary.withOpacity(0.2),
+            width: 16,
+            borderRadius: BorderRadius.circular(6),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: 100,
+              color: Colors.white.withOpacity(0.05),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -211,7 +221,11 @@ class DashboardView extends GetView<DashboardController> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           TextButton(
             onPressed: () {},
@@ -221,6 +235,25 @@ class DashboardView extends GetView<DashboardController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFAB() {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        controller.isIncome.value = true;
+        Get.bottomSheet(
+          const AddTransactionSheet(),
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+        );
+      },
+      backgroundColor: AppTheme.primary,
+      icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
+      label: const Text(
+        "Catat Transaksi",
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }

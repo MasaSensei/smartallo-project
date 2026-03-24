@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,34 +24,50 @@ func NewAuthService(db *sqlx.DB, secret string) *AuthService {
 	}
 }
 
-func (s *AuthService) Register(ctx context.Context, email, password string) error {
+func (s *AuthService) Register(ctx context.Context, username, email, password string) error {
 	tx, err := s.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
+	// 1. Hash Password & Create User ID
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
 	userID := uuid.New()
 
-	_, err = tx.ExecContext(ctx,
-		"INSERT INTO users (id, email, password_hash, role, tier, created_at) VALUES ($1, $2, $3, $4, $5, NOW())",
-		userID, email, string(hashedPassword), "USER", "FREE")
+	// 2. INSERT ke tabel 'users'
+	queryUser := `INSERT INTO users (id, username, email, password_hash, role, tier, created_at) 
+                  VALUES ($1, $2, $3, $4, $5, $6, NOW())`
+	_, err = tx.ExecContext(ctx, queryUser, userID, username, email, string(hashedPassword), "USER", "FREE")
 	if err != nil {
 		return err
 	}
 
+	// 3. INSERT ke tabel 'organizations' (User sebagai Owner)
 	orgID := uuid.New()
 	_, err = tx.ExecContext(ctx,
 		"INSERT INTO organizations (id, owner_id, name, type) VALUES ($1, $2, $3, $4)",
-		orgID, userID, "Personal Organization", "PERSONAL")
+		orgID, userID, username+"'s Workspace", "PERSONAL")
 	if err != nil {
 		return err
 	}
 
+	// 4. [PENTING] INSERT ke tabel 'org_members'
+	// Supaya User resmi terdaftar sebagai personil di organisasinya sendiri
+	_, err = tx.ExecContext(ctx,
+		"INSERT INTO org_members (id, org_id, user_id, role) VALUES ($1, $2, $3, $4)",
+		uuid.New(), orgID, userID, "OWNER") // Role di sini bisa 'OWNER' atau 'ADMIN'
+	if err != nil {
+		return err
+	}
+
+	// 5. INSERT ke tabel 'pockets' (Kantong Utama)
 	_, err = tx.ExecContext(ctx,
 		"INSERT INTO pockets (id, org_id, name, balance, allocation_rule, is_main) VALUES ($1, $2, $3, $4, $5, $6)",
-		uuid.New(), orgID, "Main Pocket", 0, 100, true)
+		uuid.New(), orgID, "Kantong Utama", 0, 100, true)
 	if err != nil {
 		return err
 	}
@@ -58,7 +75,7 @@ func (s *AuthService) Register(ctx context.Context, email, password string) erro
 	return tx.Commit()
 }
 
-func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+func (s *AuthService) Login(ctx context.Context, email, password, ipAddress string) (string, error) {
 	var user struct {
 		ID           uuid.UUID `db:"id"`
 		OrgID        uuid.UUID `db:"org_id"`
@@ -66,6 +83,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		Role         string    `db:"role"`
 	}
 
+	// Query tetap sama karena kita masih pakai Email sebagai primary login identifier
 	query := `
         SELECT u.id, u.password_hash, u.role, o.id as org_id 
         FROM users u 
@@ -77,14 +95,30 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", errors.New("email atau password salah")
 	}
 
+	// Cek Password
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return "", errors.New("email atau password salah")
 	}
 
+	// --- PENGISIAN AUDIT LOG (LOGIN) ---
+	// Pakai goroutine supaya login nggak berasa lemot gara-gara nunggu insert log
+	go func(userID uuid.UUID, ip string) {
+		auditQuery := `
+            INSERT INTO audit_logs (id, user_id, action, table_name, resource_id, ip_address, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())`
+
+		_, errLog := s.db.Exec(auditQuery, uuid.New(), userID, "LOGIN", "users", userID, ip)
+		if errLog != nil {
+			// Log internal saja jika gagal, jangan gagalkan proses login utama
+			fmt.Printf("❌ Gagal simpan audit log login: %v\n", errLog)
+		}
+	}(user.ID, ipAddress)
+
+	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID.String(),
-		"org_id":  user.OrgID.String(), // SINKRON DENGAN MIDDLEWARE
+		"org_id":  user.OrgID.String(),
 		"role":    user.Role,
 		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	})

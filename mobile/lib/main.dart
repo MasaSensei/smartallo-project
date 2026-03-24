@@ -4,9 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'routes/app_pages.dart';
 
 void main() {
-  // Pastikan inisialisasi system dilakukan jika nanti pakai Storage/Firebase
   WidgetsFlutterBinding.ensureInitialized();
-
   runApp(const MyApp());
 }
 
@@ -19,15 +17,20 @@ class MyApp extends StatelessWidget {
       title: "SmartAllo",
       debugShowCheckedModeBanner: false,
 
-      // Pakai Theme Sultan kita
+      // Pakai Dark Theme Sultan Hasan
       theme: AppTheme.darkTheme,
 
-      // Navigasi
+      // Navigasi Terpusat
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
 
-      // Efek scroll ala iOS (Bouncing) sedunia
+      // Default transisi global kalau tidak di-set di GetPage
       defaultTransition: Transition.cupertino,
+
+      // Mengatur scroll agar konsisten (Bouncing di Android & iOS)
+      scrollBehavior: const ScrollBehavior().copyWith(
+        physics: const BouncingScrollPhysics(),
+      ),
     );
   }
 }

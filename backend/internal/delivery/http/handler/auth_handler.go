@@ -21,68 +21,60 @@ func (h *AuthHandler) Route(g *echo.Group) {
 }
 
 type registerRequest struct {
+	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type loginRequest struct {
+	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// Register godoc
-// @Summary      Register a new user
-// @Description  Create user, organization, and default pocket
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        request  body      registerRequest  true  "Registration Info"
-// @Success      201      {object}  map[string]string
-// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c echo.Context) error {
 	req := new(registerRequest)
 	if err := c.Bind(req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Format data salah"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Format data salah"})
 	}
 
-	// Validasi sederhana sebelum ke service (Optional tapi bagus)
-	if req.Email == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Email dan password wajib diisi"})
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Username, email, dan password wajib diisi"})
 	}
 
-	err := h.authService.Register(c.Request().Context(), req.Email, req.Password)
+	// Panggil service dengan parameter username
+	err := h.authService.Register(c.Request().Context(), req.Username, req.Email, req.Password)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
 	return c.JSON(http.StatusCreated, map[string]string{
-		"message": "Registrasi berhasil! Organisasi dan Kantong utama telah dibuat.",
+		"message": "Registrasi berhasil! Silakan login.",
 	})
 }
 
-// Login godoc
-// @Summary      User Login
-// @Description  Authenticate user and return JWT token
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        request  body      loginRequest  true  "Login Credentials"
-// @Success      200      {object}  map[string]string "token"
-// @Failure      401      {object}  map[string]string
-// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c echo.Context) error {
 	req := new(loginRequest)
 	if err := c.Bind(req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Format data salah"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "Format data salah"})
 	}
 
-	token, err := h.authService.Login(c.Request().Context(), req.Email, req.Password)
+	// Ambil IP Address User
+	ip := c.RealIP()
+
+	// Kirim IP ke service
+	token, err := h.authService.Login(c.Request().Context(), req.Email, req.Password, ip)
 	if err != nil {
-		// Kita berikan 401 Unauthorized jika login gagal
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"token": token,
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "Login berhasil",
+		"data": map[string]interface{}{
+			"token": token,
+			"user": map[string]string{
+				"email": req.Email,
+			},
+		},
 	})
 }
