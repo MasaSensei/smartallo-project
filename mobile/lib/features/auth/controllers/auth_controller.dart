@@ -33,7 +33,7 @@ class AuthController extends GetxController {
         await storage.write('token', token);
         await storage.write('user', userData);
 
-        Get.offAllNamed('/dashboard');
+        Get.offAllNamed('/organization');
         _clearControllers();
       } else {
         // Handle error message dari backend

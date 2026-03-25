@@ -9,6 +9,7 @@ import (
 type RouterConfig struct {
 	Echo                *echo.Echo
 	AuthHandler         *handler.AuthHandler
+	OrgHandler          *handler.OrgHandler
 	TransactionHandler  *handler.TransactionHandler
 	PocketHandler       *handler.PocketHandler
 	CategoryHandler     *handler.CategoryHandler
@@ -25,6 +26,12 @@ func SetupRouter(config RouterConfig) {
 
 	protected := api.Group("")
 	protected.Use(middleware.JWTMiddleware(config.JwtSecret))
+
+	organizations := protected.Group("/organizations")
+	{
+		organizations.POST("", config.OrgHandler.Create)
+		organizations.GET("", config.OrgHandler.List)
+	}
 
 	transactions := protected.Group("/transactions")
 	{

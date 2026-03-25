@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'package:mobile/features/organization/bindings/organization_binding.dart';
+import 'package:mobile/features/organization/views/create_organization_view.dart';
+import 'package:mobile/features/organization/views/organization_view.dart';
 import 'package:mobile/features/splash/bindings/splash_binding.dart';
 import 'package:mobile/features/splash/views/splash_view.dart';
 import '../features/auth/bindings/auth_binding.dart';
@@ -35,6 +38,18 @@ class AppPages {
       transition: Transition.rightToLeftWithFade, // Animasi geser biar cakep
     ),
 
+    GetPage(
+      name: '/organization',
+      page: () => const OrganizationView(),
+      binding: OrganizationBinding(),
+      transition:
+          Transition.fadeIn, // Biar transisinya smooth ala dashboard premium
+    ),
+    GetPage(
+      name: '/organization/create',
+      page: () => const CreateOrganizationView(),
+      binding: OrganizationBinding(),
+    ),
     // --- DASHBOARD FEATURE ---
     GetPage(
       name: Routes.DASHBOARD,

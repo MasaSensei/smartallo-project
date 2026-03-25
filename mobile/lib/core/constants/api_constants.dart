@@ -7,6 +7,9 @@ class ApiConstants {
   static const String register = "$baseUrl/auth/register";
   static const String login = "$baseUrl/auth/login";
 
+  // --- ORGANIZATIONS (BARU) ---
+  static const String organizations = "$baseUrl/organizations";
+
   // --- POCKETS ---
   static const String pockets = "$baseUrl/pockets";
   static const String pocketsDashboard = "$baseUrl/pockets/dashboard";

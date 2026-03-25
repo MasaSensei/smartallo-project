@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:get_storage/get_storage.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../organization/controllers/organization_controller.dart';
 
 class DashboardController extends GetxController {
-  // Data Reactive
-  final rxPockets = <Map<String, dynamic>>[].obs;
-  final rxTransactions = <Map<String, dynamic>>[].obs;
-  final rxTotalBalance = 0.0.obs;
-  final rxUserName = "Hasan Syafi'i".obs;
-  final rxUserTier = "PREMIUM".obs;
+  final storage = GetStorage();
+  final _connect = GetConnect();
 
-  // Form States (Dropdown & Input)
+  // Ambil instance OrganizationController yang sudah permanent
+  final orgCtrl = Get.find<OrganizationController>();
+
+  // --- DATA REAKSIF ---
+  final rxPockets = <dynamic>[].obs;
+  final rxTransactions = <dynamic>[].obs;
+  final isLoading = false.obs;
+
+  // Form States (Untuk BottomSheet Tambah Transaksi)
   final rxPocketOptions = <String>[].obs;
   final rxCategoryOptions = <String>[].obs;
   final isIncome = true.obs;
@@ -21,55 +27,15 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadMockData();
-    _syncOptions();
-  }
 
-  // --- REVENUE LOGIC (Tambah Kategori/Kantong) ---
+    // 1. Dengerin perubahan Workspace.
+    // Kalau selectedOrg berubah, otomatis re-fetch data dashboard.
+    ever(orgCtrl.selectedOrg, (_) => fetchAllData());
 
-  void addCustomCategory(String name) {
-    if (name.trim().isNotEmpty && !rxCategoryOptions.contains(name)) {
-      rxCategoryOptions.add(name);
-      selectedCategory.value = name;
-    }
-  }
+    // 2. Load data pertama kali
+    fetchAllData();
 
-  void addCustomPocket(String name) {
-    if (name.trim().isNotEmpty && !rxPocketOptions.contains(name)) {
-      rxPockets.add({"name": name, "balance": 0.0, "color": Colors.blueGrey});
-      _syncOptions();
-      selectedPocket.value = name;
-    }
-  }
-
-  // --- DATA LOADING ---
-
-  void _loadMockData() {
-    rxPockets.assignAll([
-      {
-        "name": "Tabungan Nikah",
-        "balance": 15000000.0,
-        "color": AppTheme.primary,
-      },
-      {"name": "Dana Darurat", "balance": 5000000.0, "color": AppTheme.success},
-      {"name": "Investasi", "balance": 2500000.0, "color": Colors.orange},
-    ]);
-
-    rxTransactions.assignAll([
-      {
-        "title": "Gaji Maret",
-        "amount": 8500000.0,
-        "type": "IN",
-        "date": "Today",
-      },
-      {
-        "title": "Kopi Starling",
-        "amount": 15000.0,
-        "type": "OUT",
-        "date": "Today",
-      },
-    ]);
-
+    // 3. Mock Kategori (Nanti bisa ditarik dari API juga)
     rxCategoryOptions.assignAll([
       "Gaji",
       "Bonus",
@@ -77,72 +43,169 @@ class DashboardController extends GetxController {
       "Transport",
       "Hobi",
     ]);
-    _calculateTotal();
   }
 
-  void _syncOptions() {
-    rxPocketOptions.assignAll(
-      rxPockets.map((e) => e['name'] as String).toList(),
-    );
+  // --- CORE DATA FETCHING ---
 
-    // Set default selection kalau masih kosong
-    if (rxPocketOptions.isNotEmpty && selectedPocket.value.isEmpty) {
+  Future<void> fetchAllData() async {
+    final orgId = orgCtrl.selectedOrg.value?.id;
+    if (orgId == null) return;
+
+    try {
+      isLoading.value = true;
+      final token = storage.read('token');
+      final headers = {'Authorization': 'Bearer $token'};
+
+      // Kita tarik data Kantong dan History Transaksi secara paralel
+      final responses = await Future.wait([
+        _connect.get("${ApiConstants.pockets}?org_id=$orgId", headers: headers),
+        _connect.get(
+          "${ApiConstants.transactionHistory}?org_id=$orgId",
+          headers: headers,
+        ),
+      ]);
+
+      final pocketRes = responses[0];
+      final transRes = responses[1];
+
+      if (pocketRes.isOk) {
+        rxPockets.assignAll(pocketRes.body['data'] ?? []);
+        _syncPocketOptions();
+      }
+
+      if (transRes.isOk) {
+        rxTransactions.assignAll(transRes.body['data'] ?? []);
+      }
+    } catch (e) {
+      _showError("Gagal sinkronisasi data, Bos!");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // --- LOGIC HELPER ---
+
+  void _syncPocketOptions() {
+    rxPocketOptions.assignAll(
+      rxPockets.map((e) => e['name'].toString()).toList(),
+    );
+    if (rxPocketOptions.isNotEmpty) {
       selectedPocket.value = rxPocketOptions.first;
     }
-    if (rxCategoryOptions.isNotEmpty && selectedCategory.value.isEmpty) {
+    if (rxCategoryOptions.isNotEmpty) {
       selectedCategory.value = rxCategoryOptions.first;
     }
   }
 
-  void _calculateTotal() {
-    double total = 0.0;
-    for (var pocket in rxPockets) {
-      var balance = pocket['balance'];
-      if (balance is num) total += balance.toDouble();
+  // --- CORE ACTION: SAVE TO DATABASE ---
+
+  Future<void> saveTransaction() async {
+    if (amountController.text.isEmpty) return;
+    final orgId = orgCtrl.selectedOrg.value?.id;
+
+    // Cari pocket_id berdasarkan nama yang dipilih di dropdown
+    final pocket = rxPockets.firstWhere(
+      (p) => p['name'] == selectedPocket.value,
+    );
+
+    try {
+      isLoading.value = true;
+      final response = await _connect.post(
+        ApiConstants.transactions,
+        {
+          "org_id": orgId,
+          "pocket_id": pocket['id'],
+          "category": selectedCategory.value,
+          "amount": double.tryParse(amountController.text) ?? 0,
+          "type": isIncome.value ? "IN" : "OUT",
+          "notes": "Input via Mobile",
+        },
+        headers: {'Authorization': 'Bearer ${storage.read('token')}'},
+      );
+
+      if (response.isOk) {
+        Get.back(); // Tutup BottomSheet
+        amountController.clear();
+        Get.snackbar(
+          "Sukses",
+          "Transaksi berhasil dicatat!",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // RE-FETCH: Update list transaksi & saldo organisasi
+        fetchAllData();
+        orgCtrl.fetchWorkspaces();
+      } else {
+        _showError(response.body?['message'] ?? "Gagal simpan transaksi");
+      }
+    } catch (e) {
+      _showError("Server Error pas simpan transaksi");
+    } finally {
+      isLoading.value = false;
     }
-    rxTotalBalance.value = total;
   }
 
-  // --- CORE ACTION ---
+  // --- ACTION: Tambah Kantong Baru ke Database ---
+  void addCustomPocket(String name) async {
+    final orgId = orgCtrl.selectedOrg.value?.id;
+    if (orgId == null || name.isEmpty) return;
 
-  void saveTransaction() {
-    if (amountController.text.isEmpty) return;
-    double val = double.tryParse(amountController.text) ?? 0;
+    try {
+      isLoading.value = true;
 
-    // Cari index kantong yang dipilih
-    int index = rxPockets.indexWhere((p) => p['name'] == selectedPocket.value);
+      // Ambil token dari storage
+      final token = storage.read('token');
 
-    if (index != -1) {
-      if (isIncome.value) {
-        rxPockets[index]['balance'] += val;
+      // Tembak API Backend Go Bos Hasan
+      final response = await _connect.post(
+        ApiConstants
+            .pockets, // Pastikan endpoint ini sudah terdaftar di ApiConstants
+        {
+          "org_id": orgId,
+          "name": name,
+          "balance": 0.0, // Default saldo 0 buat kantong baru
+        },
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.isOk) {
+        // Refresh semua data biar list kantong di UI update
+        await fetchAllData();
+
+        // Langsung pilih kantong yang baru dibuat biar user nggak milih lagi
+        selectedPocket.value = name;
+
+        Get.snackbar(
+          "Sukses",
+          "Kantong '$name' berhasil ditambahkan!",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
       } else {
-        // Cek saldo cukup atau nggak
-        if (rxPockets[index]['balance'] < val) {
-          Get.snackbar(
-            "Saldo Kurang",
-            "Duit di kantong '${selectedPocket.value}' nggak cukup, Bos!",
-            backgroundColor: Colors.redAccent,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-            margin: const EdgeInsets.all(15),
-          );
-          return;
-        }
-        rxPockets[index]['balance'] -= val;
+        _showError(response.body?['message'] ?? "Gagal tambah kantong.");
       }
-
-      // Masukin ke list transaksi (paling atas)
-      rxTransactions.insert(0, {
-        "title": selectedCategory.value,
-        "amount": val,
-        "type": isIncome.value ? "IN" : "OUT",
-        "date": "Just now",
-      });
-
-      rxPockets.refresh();
-      _calculateTotal();
-      Get.back(); // Tutup BottomSheet
-      amountController.clear(); // Reset input
+    } catch (e) {
+      _showError("Koneksi server bermasalah pas tambah kantong.");
+    } finally {
+      isLoading.value = false;
     }
+  }
+
+  // --- ACTION: Tambah Kategori (Cukup Lokal dulu atau API) ---
+  void addCustomCategory(String name) {
+    if (name.trim().isNotEmpty && !rxCategoryOptions.contains(name)) {
+      rxCategoryOptions.add(name);
+      selectedCategory.value = name;
+    }
+  }
+
+  void _showError(String msg) {
+    Get.snackbar(
+      "Error",
+      msg,
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+    );
   }
 }
