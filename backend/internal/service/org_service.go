@@ -60,3 +60,19 @@ func (s *OrgService) CreateWorkspace(ctx context.Context, userID uuid.UUID, name
 func (s *OrgService) GetList(ctx context.Context, userID uuid.UUID) ([]repository.OrgWithStats, error) {
 	return s.repo.GetUserOrgs(ctx, userID)
 }
+
+func (s *OrgService) GetByID(ctx context.Context, orgID uuid.UUID, userID uuid.UUID) (*repository.OrgWithStats, error) {
+	org, err := s.repo.GetOrgByID(ctx, orgID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Fetch weekly chart data
+	chartData, err := s.repo.GetWeeklyStats(ctx, orgID)
+	if err != nil {
+		return org, nil
+	}
+
+	org.WeeklyChart = chartData
+	return org, nil
+}

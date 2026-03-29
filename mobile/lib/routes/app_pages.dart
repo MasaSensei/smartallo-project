@@ -4,6 +4,8 @@ import 'package:mobile/features/organization/views/create_organization_view.dart
 import 'package:mobile/features/organization/views/organization_view.dart';
 import 'package:mobile/features/splash/bindings/splash_binding.dart';
 import 'package:mobile/features/splash/views/splash_view.dart';
+import 'package:mobile/features/subscription/bindings/subscription_binding.dart';
+import 'package:mobile/features/subscription/views/subscription_view.dart';
 import '../features/auth/bindings/auth_binding.dart';
 import '../features/auth/views/login_view.dart';
 import '../features/auth/views/register_view.dart';
@@ -56,6 +58,12 @@ class AppPages {
       page: () => const DashboardView(),
       binding: DashboardBinding(),
       transition: Transition.cupertino,
+    ),
+    GetPage(
+      name: Routes.SUBSCRIPTION,
+      page: () => const SubscriptionView(),
+      binding: SubscriptionBinding(),
+      transition: Transition.cupertino, // Biar animasinya smooth ala iPhone
     ),
   ];
 }

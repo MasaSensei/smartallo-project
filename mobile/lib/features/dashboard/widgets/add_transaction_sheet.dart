@@ -63,10 +63,10 @@ class AddTransactionSheet extends GetView<DashboardController> {
                     fontWeight: FontWeight.bold,
                     color: activeColor,
                   ),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     prefixText: "Rp ",
                     hintText: "0",
-                    hintStyle: const TextStyle(color: Colors.white10),
+                    hintStyle: TextStyle(color: Colors.white10),
                     border: InputBorder.none,
                   ),
                 ),
@@ -134,6 +134,11 @@ class AddTransactionSheet extends GetView<DashboardController> {
     required Function(String) onAddNew,
     required String label,
   }) {
+    // FIX UTAMA: Cegah Error "items.contains(value)"
+    // Kita cek apakah value ada di list. Kalau nggak ada (atau kosong), set null.
+    final String? safeValue =
+        items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -143,7 +148,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: value.isEmpty ? null : value,
+          value: safeValue, // Pakai safeValue, bukan langsung value
           isExpanded: true,
           dropdownColor: AppTheme.cardDark,
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white38),
@@ -216,8 +221,9 @@ class AddTransactionSheet extends GetView<DashboardController> {
       confirm: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
         onPressed: () {
-          if (textController.text.trim().isNotEmpty) {
-            onSave(textController.text.trim());
+          final String input = textController.text.trim();
+          if (input.isNotEmpty) {
+            onSave(input);
             Get.back();
           }
         },

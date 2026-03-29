@@ -47,5 +47,7 @@ func (h *TransactionHandler) GetHistory(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, history)
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data": history,
+	})
 }

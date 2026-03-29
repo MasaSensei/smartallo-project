@@ -47,3 +47,19 @@ func (h *OrgHandler) List(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"data": data})
 }
+
+func (h *OrgHandler) GetDetail(c echo.Context) error {
+	userID := c.Get("user_id").(string)
+	orgID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"message": "ID organisasi tidak valid"})
+	}
+
+	data, err := h.service.GetByID(c.Request().Context(), orgID, uuid.MustParse(userID))
+	if err != nil {
+		// Jika tidak ketemu atau bukan miliknya
+		return c.JSON(http.StatusNotFound, map[string]string{"message": "Workspace tidak ditemukan"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"data": data})
+}

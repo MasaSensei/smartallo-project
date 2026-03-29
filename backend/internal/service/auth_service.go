@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/MasaSensei/smartallo-backend/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -64,11 +65,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 		return err
 	}
 
-	// 5. INSERT ke tabel 'pockets' (Kantong Utama)
-	_, err = tx.ExecContext(ctx,
-		"INSERT INTO pockets (id, org_id, name, balance, allocation_rule, is_main) VALUES ($1, $2, $3, $4, $5, $6)",
-		uuid.New(), orgID, "Kantong Utama", 0, 100, true)
-	if err != nil {
+	if err := repository.SeedDefaultOrgData(ctx, tx, orgID); err != nil {
 		return err
 	}
 

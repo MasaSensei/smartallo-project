@@ -41,17 +41,17 @@ type OrgMember struct {
 
 // Pocket
 type Pocket struct {
-	ID                uuid.UUID       `json:"id" db:"id"`
-	OrgID             uuid.UUID       `json:"org_id" db:"org_id"`
-	Name              string          `json:"name" db:"name"`
-	Balance           decimal.Decimal `json:"balance" db:"balance"`
-	AllocationRule    float64         `json:"allocation_rule" db:"allocation_rule"`
-	SelfTaxFlat       decimal.Decimal `json:"self_tax_flat" db:"self_tax_flat"`
-	SelfTaxPercentage float64         `json:"self_tax_percentage" db:"self_tax_percentage"`
-	TargetAmount      decimal.Decimal `json:"target_amount" db:"target_amount"` // Sesuai SQL
-	IsMain            bool            `json:"is_main" db:"is_main"`
-	CreatedAt         time.Time       `json:"created_at" db:"created_at"`
-	DeletedAt         *time.Time      `json:"deleted_at,omitempty" db:"deleted_at"`
+	ID                uuid.UUID        `json:"id" db:"id"`
+	OrgID             uuid.UUID        `json:"org_id" db:"org_id"`
+	Name              string           `json:"name" db:"name"`
+	Balance           decimal.Decimal  `json:"balance" db:"balance"`
+	AllocationRule    float64          `json:"allocation_rule" db:"allocation_rule"`
+	SelfTaxFlat       decimal.Decimal  `json:"self_tax_flat" db:"self_tax_flat"`
+	SelfTaxPercentage float64          `json:"self_tax_percentage" db:"self_tax_percentage"`
+	TargetAmount      *decimal.Decimal `db:"target_amount" json:"target_amount"`
+	IsMain            bool             `json:"is_main" db:"is_main"`
+	CreatedAt         time.Time        `json:"created_at" db:"created_at"`
+	DeletedAt         *time.Time       `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
 // Category
@@ -75,6 +75,7 @@ type Transaction struct {
 	TotalAmount    decimal.Decimal `json:"total_amount" db:"total_amount"`
 	Description    string          `json:"description" db:"description"`
 	Status         string          `json:"status" db:"status"`
+	CategoryName   string          `json:"category_name" db:"category_name"`
 	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
 }
 

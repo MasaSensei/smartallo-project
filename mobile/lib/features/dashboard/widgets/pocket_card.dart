@@ -6,11 +6,26 @@ class PocketCard extends StatelessWidget {
 
   const PocketCard({super.key, required this.pocket});
 
+  // --- HELPER UNTUK PARSING WARNA ---
+  Color _parseColor(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return Colors.blueGrey;
+    try {
+      final buffer = StringBuffer();
+      if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+      buffer.write(hexString.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return Colors.blueGrey; // Balikin warna default kalau format salah
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Kita hapus logika progress & target
+    // Panggil helper di sini
+    final Color mainColor = _parseColor(pocket['color']);
+
     return Container(
-      width: 260, // Sedikit diperkecil agar pas di layar
+      width: 260,
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -19,13 +34,13 @@ class PocketCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            pocket['color'] ?? Colors.blueGrey,
-            (pocket['color'] as Color).withOpacity(0.6),
+            mainColor, // Pakai warna hasil parsing
+            mainColor.withOpacity(0.6),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: (pocket['color'] as Color).withOpacity(0.3),
+            color: mainColor.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -35,13 +50,12 @@ class PocketCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Row atas untuk Nama & Icon kecil
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
-                  pocket['name'],
+                  pocket['name'] ?? "Kantong", // Safety null
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -57,8 +71,6 @@ class PocketCard extends StatelessWidget {
               ),
             ],
           ),
-
-          // Bagian Saldo
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -68,7 +80,8 @@ class PocketCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               AmountText(
-                pocket['balance'],
+                // Pastikan saldo diparsing ke double/num dulu biar aman
+                double.tryParse(pocket['balance']?.toString() ?? '0') ?? 0.0,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 26,
@@ -77,8 +90,6 @@ class PocketCard extends StatelessWidget {
               ),
             ],
           ),
-
-          // Badge Status (Pengganti Progress Bar agar tidak kosong)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(

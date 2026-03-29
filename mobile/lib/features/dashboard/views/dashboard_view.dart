@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/amount_text.dart';
-import '../../../core/widgets/transaction_tile.dart';
-import '../../organization/controllers/organization_controller.dart'; // Import ini
+import '../../organization/controllers/organization_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/pocket_card.dart';
 import '../widgets/add_transaction_sheet.dart';
@@ -14,7 +14,6 @@ class DashboardView extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    // Kita butuh akses ke OrganizationController untuk nama Workspace
     final orgCtrl = Get.find<OrganizationController>();
 
     return Scaffold(
@@ -28,12 +27,32 @@ class DashboardView extends GetView<DashboardController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildTopBar(orgCtrl), // Kirim instance orgCtrl
-                _buildChartSection(),
-                _buildSectionTitle("Kantong Tabungan"),
-                _buildPocketCarousel(),
-                _buildSectionTitle("Aktivitas Terakhir"),
-                _buildTransactionList(),
+                _buildTopBar(orgCtrl),
+
+                // Chart Section
+                Obx(
+                  () =>
+                      controller.isLoading.value
+                          ? _buildChartSkeleton()
+                          : _buildChartSection(),
+                ),
+
+                _buildSectionTitle("Saving Pockets"),
+                Obx(
+                  () =>
+                      controller.isLoading.value
+                          ? _buildPocketSkeleton()
+                          : _buildPocketCarousel(),
+                ),
+
+                _buildSectionTitle("Recent Activity"),
+                Obx(
+                  () =>
+                      controller.isLoading.value
+                          ? _buildTransactionSkeleton()
+                          : _buildTransactionList(),
+                ),
+
                 const SizedBox(height: 120),
               ],
             ),
@@ -44,6 +63,7 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
+  // --- Top Bar ---
   Widget _buildTopBar(OrganizationController orgCtrl) {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -51,7 +71,6 @@ class DashboardView extends GetView<DashboardController> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            // Pakai expanded agar teks tidak overflow
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,10 +82,9 @@ class DashboardView extends GetView<DashboardController> {
                       size: 14,
                     ),
                     const SizedBox(width: 6),
-                    // Tampilkan Nama Workspace yang aktif
                     Obx(
                       () => Text(
-                        orgCtrl.selectedOrg.value?.name ?? "Pilih Workspace",
+                        orgCtrl.selectedOrg.value?.name ?? "Select Workspace",
                         style: const TextStyle(
                           color: Colors.white60,
                           fontSize: 13,
@@ -76,70 +94,82 @@ class DashboardView extends GetView<DashboardController> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Total Balance dari Workspace yang dipilih
-                Obx(
-                  () => AmountText(
-                    orgCtrl.selectedOrg.value?.totalBalance ?? 0.0,
+                Obx(() {
+                  if (controller.isLoading.value) {
+                    return _buildBaseShimmer(
+                      Container(
+                        height: 32,
+                        width: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    );
+                  }
+                  final balance =
+                      double.tryParse(
+                        orgCtrl.selectedOrg.value?.totalBalance ?? '0',
+                      ) ??
+                      0.0;
+                  return AmountText(
+                    balance,
                     style: const TextStyle(
-                      fontSize: 30,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: -1,
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
-          // Tombol Switch Workspace
-          GestureDetector(
-            onTap: () => Get.toNamed('/organization'),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.cardDark,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
-            ),
-          ),
+          _buildSwitchBtn(),
         ],
       ),
     );
   }
 
-  // Section Chart tetap sama (Visual Only), tapi pastikan responsive
+  // --- Chart Section (Smoothed Line Chart) ---
   Widget _buildChartSection() {
     return Container(
-      height: 200,
+      height: 260,
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.cardDark,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Statistik Aktivitas",
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Weekly Analytics",
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              _buildChartLegend(),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           Expanded(
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 100,
-                titlesData: const FlTitlesData(show: false),
+            child: LineChart(
+              LineChartData(
                 gridData: const FlGridData(show: false),
+                titlesData: _buildChartTitles(),
                 borderData: FlBorderData(show: false),
-                barGroups: _chartGroups(),
+                lineBarsData: [
+                  _lineData(AppTheme.success, controller.rxIncomeData),
+                  _lineData(AppTheme.danger, controller.rxExpenseData),
+                ],
               ),
             ),
           ),
@@ -148,37 +178,91 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  List<BarChartGroupData> _chartGroups() {
-    List<double> visualData = [30, 50, 40, 80, 55, 45, 90];
-    return List.generate(
-      visualData.length,
-      (i) => BarChartGroupData(
-        x: i,
-        barRods: [
-          BarChartRodData(
-            toY: visualData[i],
-            color:
-                i == 6 ? AppTheme.primary : AppTheme.primary.withOpacity(0.2),
-            width: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
+  LineChartBarData _lineData(Color color, List<double> data) {
+    return LineChartBarData(
+      isCurved: true,
+      curveSmoothness: 0.35,
+      color: color,
+      barWidth: 3,
+      isStrokeCapRound: true,
+      dotData: const FlDotData(show: false),
+      belowBarData: BarAreaData(
+        show: true,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.15), color.withOpacity(0)],
+        ),
+      ),
+      spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), data[i])),
+    );
+  }
+
+  FlTitlesData _buildChartTitles() {
+    return FlTitlesData(
+      rightTitles: const AxisTitles(),
+      topTitles: const AxisTitles(),
+      leftTitles: const AxisTitles(),
+      bottomTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 30,
+          interval: 1,
+          getTitlesWidget: (val, _) {
+            int i = val.toInt();
+            if (i >= 0 && i < controller.rxChartLabels.length) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  controller.rxChartLabels[i],
+                  style: const TextStyle(color: Colors.white24, fontSize: 10),
+                ),
+              );
+            }
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }
 
+  Widget _buildChartLegend() {
+    return Row(
+      children: [
+        _legendItem("In", AppTheme.success),
+        const SizedBox(width: 12),
+        _legendItem("Out", AppTheme.danger),
+      ],
+    );
+  }
+
+  Widget _legendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white38, fontSize: 10),
+        ),
+      ],
+    );
+  }
+
+  // --- List & Carousel ---
   Widget _buildPocketCarousel() {
     return SizedBox(
-      height: 170,
+      height: 190,
       child: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
         if (controller.rxPockets.isEmpty) {
           return const Center(
             child: Text(
-              "Belum ada kantong.",
-              style: TextStyle(color: Colors.white38),
+              "No pockets found",
+              style: TextStyle(color: Colors.white24),
             ),
           );
         }
@@ -197,57 +281,179 @@ class DashboardView extends GetView<DashboardController> {
 
   Widget _buildTransactionList() {
     return Obx(() {
-      if (controller.isLoading.value) return const SizedBox();
       if (controller.rxTransactions.isEmpty) {
         return const Center(
           child: Padding(
-            padding: EdgeInsets.only(top: 20),
+            padding: EdgeInsets.all(40),
             child: Text(
-              "Belum ada transaksi.",
+              "No recent activity.",
               style: TextStyle(color: Colors.white38),
             ),
           ),
         );
       }
-      return ListView.builder(
+      return ListView.separated(
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
         physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: controller.rxTransactions.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final trx = controller.rxTransactions[index];
-          // Sesuaikan field dengan JSON dari Backend Go Bos Hasan
-          return TransactionTile(
-            title: trx['category'] ?? "Tanpa Kategori",
-            amount: (trx['amount'] as num).toDouble(),
-            type: trx['type'], // "IN" atau "OUT"
-            date: trx['created_at'] ?? "Baru saja",
+          final tx = controller.rxTransactions[index];
+          final amt = double.tryParse(tx['total_amount'].toString()) ?? 0.0;
+          final bool isIncome = tx['type'] == 'IN';
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.cardDark,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: (isIncome
+                          ? AppTheme.success
+                          : AppTheme.danger)
+                      .withOpacity(0.1),
+                  child: Icon(
+                    isIncome ? Icons.add : Icons.remove,
+                    color: isIncome ? AppTheme.success : AppTheme.danger,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx['category_name'] ?? "Uncategorized",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        tx['created_at'].toString().split('T')[0],
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                AmountText(
+                  amt,
+                  style: TextStyle(
+                    color: isIncome ? AppTheme.success : AppTheme.danger,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           );
         },
       );
     });
   }
 
+  // --- Skeletons & Helpers ---
+  Widget _buildBaseShimmer(Widget child) {
+    return Shimmer.fromColors(
+      baseColor: Colors.white.withOpacity(0.05),
+      highlightColor: Colors.white.withOpacity(0.1),
+      child: child,
+    );
+  }
+
+  Widget _buildChartSkeleton() {
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardDark,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: _buildBaseShimmer(const SizedBox.expand()),
+    );
+  }
+
+  Widget _buildPocketSkeleton() {
+    return SizedBox(
+      height: 190,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        scrollDirection: Axis.horizontal,
+        itemCount: 3,
+        itemBuilder:
+            (_, __) => Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: _buildBaseShimmer(
+                Container(
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
+            ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionSkeleton() {
+    return ListView.builder(
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      itemCount: 5,
+      itemBuilder:
+          (_, __) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildBaseShimmer(
+              Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildSwitchBtn() {
+    return GestureDetector(
+      onTap: () => Get.toNamed('/organization'),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppTheme.cardDark,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Icon(
+          Icons.grid_view_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: Colors.white24,
-            size: 14,
-          ),
-        ],
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -255,17 +461,13 @@ class DashboardView extends GetView<DashboardController> {
   Widget _buildFAB() {
     return FloatingActionButton.extended(
       onPressed: () {
-        controller.isIncome.value = true;
-        Get.bottomSheet(
-          const AddTransactionSheet(),
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-        );
+        controller.setTransactionType(true);
+        Get.bottomSheet(const AddTransactionSheet(), isScrollControlled: true);
       },
       backgroundColor: AppTheme.primary,
       icon: const Icon(Icons.add, color: Colors.white),
       label: const Text(
-        "Catat",
+        "Add Record",
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );

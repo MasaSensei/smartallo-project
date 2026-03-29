@@ -42,21 +42,30 @@ export class LoginComponent {
     if (this.loginForm.valid) {
       this.isLoading.set(true);
 
+      // Tambahkan interface response biar rapi
+      interface LoginResponse {
+        data: {
+          token: string;
+        };
+        message?: string;
+      }
+
       this.api
-        .post<{ token: string }>('/auth/login', this.loginForm.value)
+        .post<LoginResponse>('/auth/login', this.loginForm.value) // Pakai interface tadi
         .subscribe({
           next: (res) => {
-            localStorage.setItem('token', res.token);
-            this.showToast('Login Berhasil! Mengalihkan...', 'success');
+            // Sekarang res.data.token valid di mata TypeScript
+            const token = res?.data?.token;
 
-            setTimeout(() => {
-              this.router.navigate(['/dashboard']);
-            }, 1000);
+            if (token) {
+              localStorage.setItem('token', token);
+              this.showToast('Login Berhasil!', 'success');
+              setTimeout(() => this.router.navigate(['/dashboard']), 1000);
+            }
           },
           error: (err) => {
             this.isLoading.set(false);
-            // Ambil pesan error dari backend Go atau default
-            const msg = err.error?.error || 'Email atau Password salah';
+            const msg = err.error?.message || 'Email atau Password salah';
             this.showToast(msg, 'error');
           },
         });

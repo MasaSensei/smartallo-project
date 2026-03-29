@@ -42,7 +42,10 @@ func (h *PocketHandler) GetAll(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, pockets)
+	// BUNGKUS DALAM KEY "data"
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data": pockets,
+	})
 }
 
 // 3. GetDashboard: Data summary untuk visualisasi progress bar

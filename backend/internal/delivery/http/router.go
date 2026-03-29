@@ -31,6 +31,8 @@ func SetupRouter(config RouterConfig) {
 	{
 		organizations.POST("", config.OrgHandler.Create)
 		organizations.GET("", config.OrgHandler.List)
+		// TAMBAHKAN INI:
+		organizations.GET("/:id", config.OrgHandler.GetDetail)
 	}
 
 	transactions := protected.Group("/transactions")

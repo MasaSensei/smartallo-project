@@ -13,17 +13,21 @@ class OrganizationController extends GetxController {
   final organizations = <OrganizationModel>[].obs;
   final selectedOrg = Rxn<OrganizationModel>();
   final orgNameController = TextEditingController();
+  var currentTier = 'FREE'.obs;
 
   @override
   void onInit() {
     super.onInit();
     _connect.timeout = const Duration(seconds: 10);
+    currentTier.value = storage.read('user_tier') ?? 'FREE';
     fetchWorkspaces();
   }
 
   Map<String, String> _getHeaders() {
-    final token = storage.read('token');
-    return {'Authorization': 'Bearer $token', 'Accept': 'application/json'};
+    return {
+      'Authorization': 'Bearer ${storage.read('token')}',
+      'Accept': 'application/json',
+    };
   }
 
   Future<void> fetchWorkspaces() async {
@@ -35,12 +39,19 @@ class OrganizationController extends GetxController {
       );
 
       if (response.isOk) {
+        // 1. Sync Tier
+        if (response.body['tier'] != null) {
+          currentTier.value = response.body['tier'];
+          storage.write('user_tier', currentTier.value);
+        }
+
+        // 2. Map List
         final List? data = response.body['data'];
         if (data != null) {
           final list = data.map((e) => OrganizationModel.fromJson(e)).toList();
           organizations.assignAll(list);
 
-          // Cek apakah ada ID yang tersimpan di storage sebelumnya
+          // 3. Auto Select Workspace terakhir
           final savedId = storage.read('active_org_id');
           if (savedId != null && organizations.any((o) => o.id == savedId)) {
             selectedOrg.value = organizations.firstWhere(
@@ -49,18 +60,47 @@ class OrganizationController extends GetxController {
           } else if (organizations.isNotEmpty) {
             selectedOrg.value = organizations.first;
           }
+
+          // 4. Sync detail saldo untuk org yang terpilih
+          if (selectedOrg.value != null) {
+            syncSelectedOrgDetails(selectedOrg.value!.id);
+          }
         }
-      } else {
-        organizations.clear();
-        _showError(
-          response.body?['message'] ?? "Gagal ambil daftar workspace.",
-        );
       }
-    } catch (e) {
-      _showError("Koneksi ke server bermasalah!");
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Fungsi sakti untuk ambil detail saldo terbaru dari Go
+  Future<void> syncSelectedOrgDetails(String orgId) async {
+    try {
+      final response = await _connect.get(
+        "${ApiConstants.organizations}/$orgId",
+        headers: _getHeaders(),
+      );
+      if (response.isOk) {
+        final detail = OrganizationModel.fromJson(response.body['data']);
+        // Update data di list dan selected variable
+        int index = organizations.indexWhere((o) => o.id == orgId);
+        if (index != -1) organizations[index] = detail;
+        if (selectedOrg.value?.id == orgId) {
+          selectedOrg.value = detail;
+        }
+      }
+    } catch (e) {
+      print("Sync detail failed: $e");
+    }
+  }
+
+  void selectWorkspace(OrganizationModel org) async {
+    selectedOrg.value = org;
+    storage.write('active_org_id', org.id);
+
+    // Sebelum pindah, pastikan data saldo terbaru ditarik
+    await syncSelectedOrgDetails(org.id);
+
+    Get.offAllNamed('/dashboard');
   }
 
   void createWorkspace() async {
@@ -94,14 +134,6 @@ class OrganizationController extends GetxController {
     } finally {
       isCreating.value = false;
     }
-  }
-
-  void selectWorkspace(OrganizationModel org) {
-    selectedOrg.value = org;
-    storage.write('active_org_id', org.id);
-
-    // Langsung pindah ke Dashboard setelah pilih
-    Get.offAllNamed('/dashboard');
   }
 
   void _showError(String message) {

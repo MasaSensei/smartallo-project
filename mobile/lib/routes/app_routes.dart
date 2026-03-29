@@ -6,5 +6,7 @@ abstract class Routes {
 
   static const ORGANIZATION = '/organization';
   static const CREATE_ORGANIZATION = '/organization/create';
+
+  static const SUBSCRIPTION = '/subscription';
   // Nanti tambah sini: static const ORG_SETUP = '/org-setup';
 }

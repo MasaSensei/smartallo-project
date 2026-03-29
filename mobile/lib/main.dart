@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart'; // Tambahkan ini
 import 'core/theme/app_theme.dart';
 import 'routes/app_pages.dart';
+import 'features/organization/controllers/organization_controller.dart'; // Import controller
 
-void main() {
+void main() async {
+  // Wajib panggil ini kalau ada async sebelum runApp
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi storage biar token & org_id aman
+  await GetStorage.init();
+
   runApp(const MyApp());
 }
 
@@ -16,18 +23,17 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: "SmartAllo",
       debugShowCheckedModeBanner: false,
-
-      // Pakai Dark Theme Sultan Hasan
       theme: AppTheme.darkTheme,
 
-      // Navigasi Terpusat
+      // --- SOLUSI UTAMA: Inject OrganizationController secara Global ---
+      initialBinding: BindingsBuilder(() {
+        Get.put(OrganizationController(), permanent: true);
+      }),
+
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
-
-      // Default transisi global kalau tidak di-set di GetPage
       defaultTransition: Transition.cupertino,
 
-      // Mengatur scroll agar konsisten (Bouncing di Android & iOS)
       scrollBehavior: const ScrollBehavior().copyWith(
         physics: const BouncingScrollPhysics(),
       ),

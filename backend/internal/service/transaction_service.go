@@ -77,19 +77,16 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 
 		totalDeduction := txData.TotalAmount.Add(taxAmount)
 
-		_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance - $1 WHERE id = $2 AND balance >= $1",
+		res, err := dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance - $1 WHERE id = $2 AND balance >= $1",
 			totalDeduction, txData.SourcePocketID)
 		if err != nil {
+			return err
+		}
+
+		rows, _ := res.RowsAffected()
+		if rows == 0 {
 			return errors.New("saldo tidak cukup (termasuk pajak mandiri)")
 		}
-
-		if taxAmount.GreaterThan(decimal.Zero) {
-			_, err = dbTx.ExecContext(ctx, "UPDATE pockets SET balance = balance + $1 WHERE org_id = $2 AND is_main = true",
-				taxAmount, txData.OrgID)
-		}
-
-		dbTx.ExecContext(ctx, "INSERT INTO transaction_details (transaction_id, pocket_id, amount) VALUES ($1, $2, $3)",
-			txData.ID, txData.SourcePocketID, txData.TotalAmount)
 
 	default:
 		return errors.New("tipe transaksi tidak dikenal (harus IN atau OUT)")
