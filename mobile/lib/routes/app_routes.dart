@@ -8,5 +8,8 @@ abstract class Routes {
   static const CREATE_ORGANIZATION = '/organization/create';
 
   static const SUBSCRIPTION = '/subscription';
+
+  static const MANAGEMENT = '/management';
+  static const HISTORY = '/history';
   // Nanti tambah sini: static const ORG_SETUP = '/org-setup';
 }

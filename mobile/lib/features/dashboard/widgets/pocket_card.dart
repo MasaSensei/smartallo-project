@@ -55,7 +55,7 @@ class PocketCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  pocket['name'] ?? "Kantong", // Safety null
+                  pocket['name'] ?? "Pocket", // Safety null
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -75,7 +75,7 @@ class PocketCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Saldo saat ini",
+                "Current Balance",
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 4),
@@ -97,7 +97,7 @@ class PocketCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
-              "Aktif",
+              "Active",
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 10,

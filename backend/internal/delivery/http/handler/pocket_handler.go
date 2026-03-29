@@ -60,6 +60,26 @@ func (h *PocketHandler) GetDashboard(c echo.Context) error {
 	return c.JSON(http.StatusOK, summaries)
 }
 
+// GetByID: Mengambil satu detail kantong
+func (h *PocketHandler) GetByID(c echo.Context) error {
+	id := c.Param("id")
+	orgID := c.Get("org_id").(string)
+
+	pocketID, err := uuid.Parse(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID tidak valid"})
+	}
+
+	res, err := h.service.GetPocketByID(c.Request().Context(), pocketID, uuid.MustParse(orgID))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data": res,
+	})
+}
+
 // 4. Update: Mengubah nama, target, atau persentase alokasi
 func (h *PocketHandler) Update(c echo.Context) error {
 	id := c.Param("id")

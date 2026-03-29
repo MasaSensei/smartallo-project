@@ -30,7 +30,7 @@ class OrganizationView extends GetView<OrganizationController> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       title: const Text(
-        "Pilih Workspace",
+        "Select Workspace",
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
       actions: [Obx(() => _buildTierBadge()), const SizedBox(width: 16)],
@@ -50,7 +50,7 @@ class OrganizationView extends GetView<OrganizationController> {
       children: [
         if (controller.currentTier.value == 'FREE') const _PromoBanner(),
         const SizedBox(height: 24),
-        _buildSectionTitle("Workspace Anda"),
+        _buildSectionTitle("Your Workspaces"),
         const SizedBox(height: 16),
         if (controller.organizations.isEmpty)
           _buildEmptyState()
@@ -129,7 +129,7 @@ class OrganizationView extends GetView<OrganizationController> {
         Icon(Icons.business_center_outlined, size: 70, color: Colors.white10),
         const SizedBox(height: 16),
         const Text(
-          "Belum ada workspace.\nBuat satu untuk mulai mengelola saldo.",
+          "No workspaces found.\nCreate one to start managing your balance.",
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white38, height: 1.5),
         ),
@@ -144,7 +144,7 @@ class OrganizationView extends GetView<OrganizationController> {
       elevation: 4,
       icon: const Icon(Icons.add, color: Colors.white),
       label: const Text(
-        "Workspace Baru",
+        "New Workspace",
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
@@ -209,7 +209,7 @@ class _OrgCard extends StatelessWidget {
           ),
         ),
         subtitle: const Text(
-          "Owner Workspace",
+          "Workspace Owner",
           style: TextStyle(color: Colors.white38, fontSize: 12),
         ),
         trailing:
@@ -256,7 +256,7 @@ class _PromoBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Buka Fitur Sultan!",
+                  "Unlock Premium Features!",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -265,7 +265,7 @@ class _PromoBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Upgrade ke PRO untuk workspace tak terbatas.",
+                  "Upgrade to PRO for unlimited workspaces.",
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 12,
@@ -284,7 +284,7 @@ class _PromoBanner extends StatelessWidget {
               ),
             ),
             child: const Text(
-              "CEK",
+              "UPGRADE",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),

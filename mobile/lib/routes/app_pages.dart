@@ -1,4 +1,8 @@
 import 'package:get/get.dart';
+import 'package:mobile/features/history/bindings/history_binding.dart';
+import 'package:mobile/features/history/views/history_view.dart';
+import 'package:mobile/features/management/bindings/management_binding.dart';
+import 'package:mobile/features/management/views/management_view.dart';
 import 'package:mobile/features/organization/bindings/organization_binding.dart';
 import 'package:mobile/features/organization/views/create_organization_view.dart';
 import 'package:mobile/features/organization/views/organization_view.dart';
@@ -64,6 +68,16 @@ class AppPages {
       page: () => const SubscriptionView(),
       binding: SubscriptionBinding(),
       transition: Transition.cupertino, // Biar animasinya smooth ala iPhone
+    ),
+    GetPage(
+      name: Routes.MANAGEMENT,
+      page: () => const ManagementView(),
+      binding: ManagementBinding(),
+    ),
+    GetPage(
+      name: Routes.HISTORY,
+      page: () => const HistoryView(),
+      binding: HistoryBinding(),
     ),
   ];
 }

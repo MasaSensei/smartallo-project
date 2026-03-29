@@ -12,12 +12,10 @@ class AddTransactionSheet extends GetView<DashboardController> {
       // Logic Warna & Label Dinamis
       final bool isIncome = controller.isIncome.value;
       final Color activeColor = isIncome ? AppTheme.success : AppTheme.danger;
-      final String pocketLabel =
-          isIncome ? "Simpan ke Mana?" : "Pakai Kantong Mana?";
+      final String pocketLabel = isIncome ? "Deposit to" : "Pay from";
       final String categoryLabel =
-          isIncome ? "Sumber Pendapatan" : "Keperluan / Kategori";
-      final String buttonText =
-          isIncome ? "Simpan Tabungan" : "Catat Pengeluaran";
+          isIncome ? "Income Source" : "Expense Category";
+      final String buttonText = isIncome ? "Save Income" : "Record Expense";
 
       return Container(
         decoration: const BoxDecoration(
@@ -45,8 +43,8 @@ class AddTransactionSheet extends GetView<DashboardController> {
                   ),
                   child: Row(
                     children: [
-                      _buildTab("Nabung", true, AppTheme.success),
-                      _buildTab("Keluar", false, AppTheme.danger),
+                      _buildTab("Income", true, AppTheme.success),
+                      _buildTab("Expense", false, AppTheme.danger),
                     ],
                   ),
                 ),
@@ -75,7 +73,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
                 // --- DROPDOWN KANTONG (DINAMIS) ---
                 _buildLabel(pocketLabel),
                 _buildSmartDropdown(
-                  label: "Kantong",
+                  label: "Pocket",
                   value: controller.selectedPocket.value,
                   items: controller.rxPocketOptions,
                   onChanged: (val) => controller.selectedPocket.value = val!,
@@ -83,16 +81,38 @@ class AddTransactionSheet extends GetView<DashboardController> {
                 ),
                 const SizedBox(height: 20),
 
-                // --- DROPDOWN KATEGORI (DINAMIS) ---
                 _buildLabel(categoryLabel),
                 _buildSmartDropdown(
-                  label: "Kategori",
+                  label: "Category",
                   value: controller.selectedCategory.value,
                   items: controller.rxCategoryOptions,
                   onChanged: (val) => controller.selectedCategory.value = val!,
                   onAddNew: (val) => controller.addCustomCategory(val),
                 ),
-                const SizedBox(height: 40),
+
+                const SizedBox(height: 20),
+
+                _buildLabel("Notes (Optional)"),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: TextField(
+                    controller: controller.descriptionController,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    maxLines: 2, // Biar bisa agak panjang catatannya
+                    decoration: const InputDecoration(
+                      hintText: "What is this for?",
+                      hintStyle: TextStyle(color: Colors.white24),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
 
                 // --- BUTTON SIMPAN ---
                 SizedBox(
@@ -170,7 +190,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    "Tambah $label Baru",
+                    "Add New $label",
                     style: const TextStyle(
                       color: AppTheme.primary,
                       fontWeight: FontWeight.bold,
@@ -195,7 +215,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
   void _showAddDialog(String label, Function(String) onSave) {
     TextEditingController textController = TextEditingController();
     Get.defaultDialog(
-      title: "Tambah $label",
+      title: "Add New $label",
       backgroundColor: AppTheme.cardDark,
       titleStyle: const TextStyle(color: Colors.white, fontSize: 18),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -204,7 +224,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
         autofocus: true,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: "Nama $label baru...",
+          hintText: "e.g. $label",
           hintStyle: const TextStyle(color: Colors.white24),
           enabledBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.white10),
@@ -216,7 +236,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
       ),
       cancel: TextButton(
         onPressed: () => Get.back(),
-        child: const Text("Batal", style: TextStyle(color: Colors.white54)),
+        child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
       ),
       confirm: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
@@ -227,7 +247,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
             Get.back();
           }
         },
-        child: const Text("Simpan", style: TextStyle(color: Colors.white)),
+        child: const Text("Save", style: TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -236,7 +256,7 @@ class AddTransactionSheet extends GetView<DashboardController> {
     bool isSelected = controller.isIncome.value == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => controller.isIncome.value = value,
+        onTap: () => controller.setTransactionType(value),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,

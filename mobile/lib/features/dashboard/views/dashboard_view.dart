@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:mobile/routes/app_routes.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/amount_text.dart';
@@ -37,7 +38,10 @@ class DashboardView extends GetView<DashboardController> {
                           : _buildChartSection(),
                 ),
 
-                _buildSectionTitle("Saving Pockets"),
+                _buildSectionTitle(
+                  "Saving Pockets",
+                  onTap: () => Get.toNamed(Routes.MANAGEMENT),
+                ),
                 Obx(
                   () =>
                       controller.isLoading.value
@@ -45,7 +49,10 @@ class DashboardView extends GetView<DashboardController> {
                           : _buildPocketCarousel(),
                 ),
 
-                _buildSectionTitle("Recent Activity"),
+                _buildSectionTitle(
+                  "Recent Activity",
+                  onTap: () => Get.toNamed(Routes.HISTORY),
+                ),
                 Obx(
                   () =>
                       controller.isLoading.value
@@ -333,6 +340,28 @@ class DashboardView extends GetView<DashboardController> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      // --- TAMBAHKAN DESKRIPSI DI SINI ---
+                      if (tx['description'] != null &&
+                          tx['description'].toString().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            tx['description'],
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(
+                                0.6,
+                              ), // Agak redup dibanding kategori
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow
+                                    .ellipsis, // Biar gak berantakan kalau kepanjangan
+                          ),
+                        ),
+                      const SizedBox(
+                        height: 4,
+                      ), // Spasi tambahan sebelum tanggal
                       Text(
                         tx['created_at'].toString().split('T')[0],
                         style: const TextStyle(
@@ -444,16 +473,33 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          if (onTap != null)
+            GestureDetector(
+              onTap: onTap,
+              child: Text(
+                "See All",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.primary.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -19,7 +19,7 @@ class LoginView extends GetView<AuthController> {
             children: [
               const SizedBox(height: 80),
               const Text(
-                "Siap Atur Uangmu Lagi?",
+                "Welcome Back!", // "Siap Atur Uangmu Lagi?"
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -28,7 +28,7 @@ class LoginView extends GetView<AuthController> {
               ),
               const SizedBox(height: 12),
               const Text(
-                "Masuk untuk melanjutkan pengelolaan keuanganmu.",
+                "Sign in to continue managing your finances.", // "Masuk untuk melanjutkan..."
                 style: TextStyle(color: Colors.white54, fontSize: 16),
               ),
               const SizedBox(height: 48),
@@ -36,8 +36,8 @@ class LoginView extends GetView<AuthController> {
               // Input Email
               BaseInput(
                 controller: controller.emailController,
-                label: "Email",
-                hint: "hasan@dev.com",
+                label: "Email Address",
+                hint: "yourname@example.com",
                 icon: Icons.alternate_email_rounded,
               ),
               const SizedBox(height: 24),
@@ -66,6 +66,10 @@ class LoginView extends GetView<AuthController> {
                   () => ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
+                      // Tambahkan ini agar saat disabled (loading) warna tetap primer
+                      disabledBackgroundColor: AppTheme.primary.withOpacity(
+                        0.7,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -86,7 +90,7 @@ class LoginView extends GetView<AuthController> {
                               ),
                             )
                             : const Text(
-                              "Masuk",
+                              "Sign In", // "Masuk"
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -102,13 +106,13 @@ class LoginView extends GetView<AuthController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Belum punya akun?",
+                    "Don't have an account?", // "Belum punya akun?"
                     style: TextStyle(color: Colors.white54),
                   ),
                   TextButton(
                     onPressed: () => Get.toNamed('/register'),
                     child: const Text(
-                      "Daftar",
+                      "Sign Up", // "Daftar"
                       style: TextStyle(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.bold,

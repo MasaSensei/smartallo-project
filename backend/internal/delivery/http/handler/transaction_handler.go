@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/MasaSensei/smartallo-backend/internal/domain"
 	"github.com/MasaSensei/smartallo-backend/internal/service"
@@ -42,7 +43,10 @@ func (h *TransactionHandler) Create(c echo.Context) error {
 func (h *TransactionHandler) GetHistory(c echo.Context) error {
 	orgID := c.Get("org_id").(string)
 
-	history, err := h.txService.GetHistory(c.Request().Context(), orgID)
+	limitStr := c.QueryParam("limit")
+	limit, _ := strconv.Atoi(limitStr)
+
+	history, err := h.txService.GetHistory(c.Request().Context(), orgID, limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

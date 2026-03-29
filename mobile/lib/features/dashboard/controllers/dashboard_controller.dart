@@ -28,6 +28,7 @@ class DashboardController extends GetxController {
   final selectedPocket = "".obs;
   final selectedCategory = "".obs;
   final amountController = TextEditingController();
+  final descriptionController = TextEditingController();
 
   @override
   void onInit() {
@@ -60,7 +61,7 @@ class DashboardController extends GetxController {
           headers: headers,
         ),
         _connect.get(
-          "${ApiConstants.transactionHistory}?org_id=$orgId",
+          "${ApiConstants.transactionHistory}?org_id=$orgId&limit=5",
           headers: headers,
         ),
       ]);
@@ -104,10 +105,12 @@ class DashboardController extends GetxController {
 
   void _syncPocketOptions() {
     if (rxPockets.isEmpty) return;
+
     final names = rxPockets.map((e) => e['name'].toString()).toList();
     rxPocketOptions.assignAll(names);
+
     if (selectedPocket.value.isEmpty || !names.contains(selectedPocket.value)) {
-      selectedPocket.value = names.first;
+      selectedPocket.value = names.first; // Set ke item pertama (Dompet Utama)
     }
   }
 
@@ -131,6 +134,7 @@ class DashboardController extends GetxController {
 
   Future<void> saveTransaction() async {
     final amountText = amountController.text.trim();
+    final descText = descriptionController.text.trim();
     final orgId = orgCtrl.selectedOrg.value?.id;
 
     final pocket = rxPockets.firstWhere(
@@ -156,11 +160,11 @@ class DashboardController extends GetxController {
         ApiConstants.transactions,
         {
           "org_id": orgId,
-          "pocket_id": pocket['id'],
+          "source_pocket_id": pocket['id'],
           "category_id": category['id'],
           "total_amount": amountText,
           "type": isIncome.value ? "IN" : "OUT",
-          "description": "Mobile Input",
+          "description": descText.isEmpty ? "Transaction via Mobile" : descText,
         },
         headers: {'Authorization': 'Bearer ${storage.read('token')}'},
       );
@@ -168,7 +172,7 @@ class DashboardController extends GetxController {
       if (response.isOk) {
         Get.back();
         amountController.clear();
-
+        descriptionController.clear();
         // Refresh everything: dashboard data + organization balance/chart
         await Future.wait([
           fetchAllData(),
@@ -238,6 +242,7 @@ class DashboardController extends GetxController {
   @override
   void onClose() {
     amountController.dispose();
+    descriptionController.dispose();
     super.onClose();
   }
 }

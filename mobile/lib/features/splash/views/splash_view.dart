@@ -3,19 +3,20 @@ import 'package:get/get.dart';
 import 'package:mobile/features/splash/controllers/splash_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 
+// ... imports tetap sama ...
+
 class SplashView extends GetView<SplashController> {
   const SplashView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Memastikan controller langsung ter-load
     controller;
 
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
       body: Stack(
         children: [
-          // Efek Cahaya Halus di Background
+          // Background Light Effect
           Positioned(
             top: -150,
             left: -150,
@@ -38,11 +39,11 @@ class SplashView extends GetView<SplashController> {
                 return Opacity(
                   opacity: value,
                   child: Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)), // Animasi naik pelan
+                    offset: Offset(0, 20 * (1 - value)),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo dengan Glow Premium
+                        // Logo with Glow
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -63,25 +64,25 @@ class SplashView extends GetView<SplashController> {
                         ),
                         const SizedBox(height: 40),
 
-                        // Nama App - Lebih Bold & Berjarak
+                        // App Name
                         const Text(
                           "SMARTALLO",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 12, // Kesan eksklusif
+                            letterSpacing: 12,
                           ),
                         ),
                         const SizedBox(height: 20),
 
-                        // Kalimat Welcome yang lebih Mengajak
+                        // Tagline & Welcome Text
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 50),
                           child: Column(
                             children: [
                               Text(
-                                "Atur setiap rupiah, amankan setiap langkah.",
+                                "Master your wealth, secure your future.", // "Atur setiap rupiah..."
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.8),
@@ -92,7 +93,7 @@ class SplashView extends GetView<SplashController> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                "Selamat datang di ekosistem alokasi pintarmu.",
+                                "Welcome to your smart allocation ecosystem.", // "Selamat datang di ekosistem..."
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.4),
@@ -111,7 +112,7 @@ class SplashView extends GetView<SplashController> {
             ),
           ),
 
-          // Indicator loading halus di bawah
+          // Loading Indicator
           Positioned(
             bottom: 50,
             left: 0,

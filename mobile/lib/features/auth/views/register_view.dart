@@ -18,7 +18,7 @@ class RegisterView extends GetView<AuthController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Atur Uangmu Lebih Rapi 💰",
+              "Join Smartallo 💰", // "Atur Uangmu Lebih Rapi"
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 28,
@@ -27,22 +27,22 @@ class RegisterView extends GetView<AuthController> {
             ),
             const SizedBox(height: 12),
             const Text(
-              "Mulai pisahkan keuanganmu jadi lebih terkontrol.",
+              "Start taking control of your financial journey today.", // "Mulai pisahkan keuanganmu..."
               style: TextStyle(color: Colors.white54, fontSize: 16),
             ),
             const SizedBox(height: 40),
 
             BaseInput(
               controller: controller.nameController,
-              label: "Nama Lengkap",
+              label: "Full Name", // "Nama Lengkap"
               hint: "Hasan Syafi'i",
               icon: Icons.person_outline_rounded,
             ),
             const SizedBox(height: 20),
             BaseInput(
               controller: controller.emailController,
-              label: "Email",
-              hint: "hasan@dev.com",
+              label: "Email Address",
+              hint: "yourname@example.com",
               icon: Icons.alternate_email_rounded,
             ),
             const SizedBox(height: 20),
@@ -67,9 +67,12 @@ class RegisterView extends GetView<AuthController> {
                 () => ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
+                    // Tambahkan ini agar saat disabled (loading) warna tetap primer
+                    disabledBackgroundColor: AppTheme.primary.withOpacity(0.7),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 0,
                   ),
                   onPressed:
                       controller.isLoading.value
@@ -79,7 +82,7 @@ class RegisterView extends GetView<AuthController> {
                       controller.isLoading.value
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
-                            "Daftar Sekarang",
+                            "Create Account", // "Daftar Sekarang"
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

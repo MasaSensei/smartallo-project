@@ -31,6 +31,13 @@ class OrganizationController extends GetxController {
   }
 
   Future<void> fetchWorkspaces() async {
+    final token = storage.read('token');
+
+    if (token == null) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return fetchWorkspaces(); // Rekursif sekali saja
+    }
+
     try {
       isLoading.value = true;
       final response = await _connect.get(
@@ -106,7 +113,7 @@ class OrganizationController extends GetxController {
   void createWorkspace() async {
     final name = orgNameController.text.trim();
     if (name.isEmpty) {
-      _showError("Nama workspace jangan kosong!");
+      _showError("Workspace name cannot be empty!");
       return;
     }
 
@@ -120,17 +127,17 @@ class OrganizationController extends GetxController {
         Get.back();
         orgNameController.clear();
         Get.snackbar(
-          "Sukses",
-          "Workspace '$name' dibuat!",
+          "Success",
+          "Workspace '$name' has been created!",
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
         fetchWorkspaces();
       } else {
-        _showError(response.body?['message'] ?? "Gagal membuat workspace.");
+        _showError(response.body?['message'] ?? "Failed to create workspace.");
       }
     } catch (e) {
-      _showError("Gagal terhubung ke server.");
+      _showError("Failed to connect to the server.");
     } finally {
       isCreating.value = false;
     }

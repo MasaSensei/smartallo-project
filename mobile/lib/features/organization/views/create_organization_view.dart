@@ -16,7 +16,7 @@ class CreateOrganizationView extends GetView<OrganizationController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Nama Workspace",
+              "Workspace Name",
               style: TextStyle(
                 color: Colors.white.withOpacity(0.8),
                 fontWeight: FontWeight.w600,
@@ -29,7 +29,7 @@ class CreateOrganizationView extends GetView<OrganizationController> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppTheme.cardDark,
-                hintText: "Misal: Bisnis Bakso / Pribadi",
+                hintText: "e.g. Business / Personal",
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -69,7 +69,7 @@ class CreateOrganizationView extends GetView<OrganizationController> {
                             ),
                           )
                           : const Text(
-                            "Simpan Sekarang",
+                            "Save Workspace",
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

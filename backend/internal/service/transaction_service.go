@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/MasaSensei/smartallo-backend/internal/domain"
 	"github.com/google/uuid"
@@ -95,12 +96,25 @@ func (s *TransactionService) ProcessTransaction(ctx context.Context, txData *dom
 	return dbTx.Commit()
 }
 
-func (s *TransactionService) GetHistory(ctx context.Context, orgID string) ([]domain.Transaction, error) {
+func (s *TransactionService) GetHistory(ctx context.Context, orgID string, limit int) ([]domain.Transaction, error) {
 	var history []domain.Transaction
-	query := `SELECT t.*, c.name as category_name 
-			  FROM transactions t
-			  LEFT JOIN categories c ON t.category_id = c.id
-			  WHERE t.org_id = $1 ORDER BY t.created_at DESC`
+
+	// Query dasar dengan JOIN ke Category dan Pocket agar UI Flutter lebih informatif
+	query := `
+        SELECT 
+            t.*, 
+            COALESCE(c.name, 'Tanpa Kategori') as category_name,
+            COALESCE(p.name, 'Kantong Otomatis') as source_pocket_name
+        FROM transactions t
+        LEFT JOIN categories c ON t.category_id = c.id
+        LEFT JOIN pockets p ON t.source_pocket_id = p.id
+        WHERE t.org_id = $1 
+        ORDER BY t.created_at DESC`
+
+	// Tambahkan LIMIT secara dinamis jika limit > 0
+	if limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+	}
 
 	err := s.db.SelectContext(ctx, &history, query, orgID)
 	return history, err

@@ -97,6 +97,19 @@ func (s *PocketService) CreatePocket(ctx context.Context, pocket *domain.Pocket)
 	return err
 }
 
+// GetPocketByID mengambil detail satu kantong
+func (s *PocketService) GetPocketByID(ctx context.Context, id uuid.UUID, orgID uuid.UUID) (*domain.Pocket, error) {
+	var pocket domain.Pocket
+	query := `SELECT * FROM pockets WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL`
+
+	err := s.db.GetContext(ctx, &pocket, query, id, orgID)
+	if err != nil {
+		return nil, errors.New("kantong tidak ditemukan")
+	}
+
+	return &pocket, nil
+}
+
 // UpdatePocket memperbarui data kantong
 func (s *PocketService) UpdatePocket(ctx context.Context, pocket *domain.Pocket) error {
 	// 1. Validasi alokasi (kecuali diri sendiri)

@@ -46,13 +46,17 @@ func SetupRouter(config RouterConfig) {
 		pockets.POST("", config.PocketHandler.Create)
 		pockets.GET("", config.PocketHandler.GetAll)
 		pockets.GET("/dashboard", config.PocketHandler.GetDashboard)
+		pockets.GET("/:id", config.PocketHandler.GetByID) // Tambahkan baris ini
 		pockets.PUT("/:id", config.PocketHandler.Update)
+		pockets.DELETE("/:id", config.PocketHandler.Delete) // Tambahkan juga delete jika belum
 	}
 
 	categories := protected.Group("/categories")
 	{
-		categories.POST("", config.CategoryHandler.Create)
-		categories.GET("", config.CategoryHandler.GetAll)
+		categories.POST("", config.CategoryHandler.Create)       // POST /categories
+		categories.GET("", config.CategoryHandler.GetAll)        // GET /categories?type=OUT
+		categories.PUT("/:id", config.CategoryHandler.Update)    // PUT /categories/:id
+		categories.DELETE("/:id", config.CategoryHandler.Delete) // DELETE /categories/:id
 	}
 
 	dashboard := protected.Group("/dashboard")

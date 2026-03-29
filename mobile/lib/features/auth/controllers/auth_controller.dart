@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:mobile/routes/app_routes.dart';
 import '../../../../core/constants/api_constants.dart';
 
 class AuthController extends GetxController {
@@ -25,7 +26,6 @@ class AuthController extends GetxController {
         "password": passwordController.text,
       });
 
-      // FIX: Pakai .isOk (milik instance Response)
       if (response.isOk) {
         final token = response.body['data']['token'];
         final userData = response.body['data']['user'];
@@ -33,15 +33,15 @@ class AuthController extends GetxController {
         await storage.write('token', token);
         await storage.write('user', userData);
 
-        Get.offAllNamed('/organization');
+        Get.offAllNamed(Routes.ORGANIZATION);
         _clearControllers();
       } else {
-        // Handle error message dari backend
-        String msg = response.body?['message'] ?? "Email atau Password salah!";
+        // Updated: Pesan error login
+        String msg = response.body?['message'] ?? "Invalid email or password!";
         _showError(msg);
       }
     } catch (e) {
-      _showError("Server lagi rewel, Bos. Cek koneksi!");
+      _showError("Connection failed. Please check your internet.");
     } finally {
       isLoading.value = false;
     }
@@ -49,7 +49,7 @@ class AuthController extends GetxController {
 
   void register() async {
     if (nameController.text.isEmpty) {
-      _showError("Username jangan kosong, Bos!");
+      _showError("Please enter your full name.");
       return;
     }
     if (!_validate()) return;
@@ -63,23 +63,24 @@ class AuthController extends GetxController {
         "password": passwordController.text,
       });
 
-      // FIX: Pakai .isOk juga di sini
       if (response.isOk) {
         Get.back();
         Get.snackbar(
-          "Sukses",
-          "Akun ${nameController.text} berhasil dibuat! Silakan login.",
+          "Success", // "Sukses"
+          "Account for ${nameController.text} created! Please sign in.",
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
         _clearControllers();
       } else {
+        // Updated: Pesan error register
         String msg =
-            response.body?['message'] ?? "Gagal daftar, coba email lain.";
+            response.body?['message'] ??
+            "Registration failed. Try another email.";
         _showError(msg);
       }
     } catch (e) {
-      _showError("Gagal konek ke server pas daftar.");
+      _showError("Failed to connect to server during registration.");
     } finally {
       isLoading.value = false;
     }
@@ -87,11 +88,11 @@ class AuthController extends GetxController {
 
   bool _validate() {
     if (!GetUtils.isEmail(emailController.text)) {
-      _showError("Format email salah!");
+      _showError("Please enter a valid email address.");
       return false;
     }
     if (passwordController.text.length < 6) {
-      _showError("Password minimal 6 karakter!");
+      _showError("Password must be at least 6 characters!");
       return false;
     }
     return true;
@@ -115,6 +116,6 @@ class AuthController extends GetxController {
 
   void logout() {
     storage.erase();
-    Get.offAllNamed('/login');
+    Get.offAllNamed(Routes.LOGIN);
   }
 }

@@ -66,17 +66,18 @@ type Category struct {
 
 // Transaction
 type Transaction struct {
-	ID             uuid.UUID       `json:"id" db:"id"`
-	OrgID          uuid.UUID       `json:"org_id" db:"org_id"`
-	CreatorID      uuid.UUID       `json:"creator_id" db:"creator_id"`
-	CategoryID     uuid.UUID       `json:"category_id" db:"category_id"`
-	SourcePocketID *uuid.UUID      `json:"source_pocket_id,omitempty" db:"source_pocket_id"` // FK ke Pockets
-	Type           string          `json:"type" db:"type"`                                   // IN / OUT
-	TotalAmount    decimal.Decimal `json:"total_amount" db:"total_amount"`
-	Description    string          `json:"description" db:"description"`
-	Status         string          `json:"status" db:"status"`
-	CategoryName   string          `json:"category_name" db:"category_name"`
-	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
+	ID               uuid.UUID       `json:"id" db:"id"`
+	OrgID            uuid.UUID       `json:"org_id" db:"org_id"`
+	CreatorID        uuid.UUID       `json:"creator_id" db:"creator_id"`
+	CategoryID       uuid.UUID       `json:"category_id" db:"category_id"`
+	SourcePocketID   *uuid.UUID      `json:"source_pocket_id,omitempty" db:"source_pocket_id"` // FK ke Pockets
+	Type             string          `json:"type" db:"type"`                                   // IN / OUT
+	TotalAmount      decimal.Decimal `json:"total_amount" db:"total_amount"`
+	Description      string          `json:"description" db:"description"`
+	Status           string          `json:"status" db:"status"`
+	CategoryName     string          `json:"category_name" db:"category_name"`
+	SourcePocketName string          `json:"source_pocket_name" db:"source_pocket_name"`
+	CreatedAt        time.Time       `json:"created_at" db:"created_at"`
 }
 
 // TransactionDetail
