@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  api:
+    image: masa-sensei/smartallo-api:latest
+    container_name: smartallo-api
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/.env
+    networks:
+      - smartallo-net
+
+  admin:
+    image: masa-sensei/smartallo-admin:latest
+    container_name: smartallo-admin
+    restart: always
+    ports:
+      - "5173:80"
+    networks:
+      - smartallo-net
+
+networks:
+  smartallo-net:
+    driver: bridge
