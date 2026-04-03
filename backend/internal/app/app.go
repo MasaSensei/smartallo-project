@@ -3,7 +3,6 @@ package app
 import (
 	"os"
 
-	_ "github.com/MasaSensei/smartallo-backend/docs"
 	"github.com/MasaSensei/smartallo-backend/internal/delivery/http"
 	"github.com/MasaSensei/smartallo-backend/internal/delivery/http/handler"
 	"github.com/MasaSensei/smartallo-backend/internal/infrastructure/database"
@@ -11,7 +10,6 @@ import (
 	"github.com/MasaSensei/smartallo-backend/internal/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func Run() {
@@ -48,7 +46,6 @@ func Run() {
 	}))
 
 	e.Use(middleware.Logger(), middleware.Recover())
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// 4. Panggil Router Terpisah
 	http.SetupRouter(http.RouterConfig{
