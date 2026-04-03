@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8080/api/v1';
+  private readonly baseUrl = 'https://api.smartallo.com/api/v1';
 
   get<T>(path: string, params: any = {}): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params });
