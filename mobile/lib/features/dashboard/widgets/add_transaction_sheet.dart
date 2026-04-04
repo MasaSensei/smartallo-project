@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:mobile/core/utils/currency_input_formatter.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -54,6 +56,11 @@ class AddTransactionSheet extends GetView<DashboardController> {
                 TextField(
                   controller: controller.amountController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter
+                        .digitsOnly, // Pastikan cuma angka
+                    CurrencyInputFormatter(), // Pasang formatter buatan kita tadi
+                  ],
                   autofocus: true,
                   textAlign: TextAlign.center,
                   style: TextStyle(

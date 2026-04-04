@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/routes/app_routes.dart';
 import '../../../../core/constants/api_constants.dart';
 
 class AuthController extends GetxController {
+  // Ambil instance AuthService yang sudah di-init di main.dart
+  final AuthService _authService = Get.find<AuthService>();
+
   var isLoading = false.obs;
   var isPasswordVisible = false.obs;
-  final storage = GetStorage();
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -15,6 +17,7 @@ class AuthController extends GetxController {
 
   final _connect = GetConnect();
 
+  // Menangani alur login
   void login() async {
     if (!_validate()) return;
 
@@ -27,29 +30,31 @@ class AuthController extends GetxController {
       });
 
       if (response.isOk) {
+        // Ambil data dari response backend Go
         final token = response.body['data']['token'];
         final userData = response.body['data']['user'];
 
-        await storage.write('token', token);
-        await storage.write('user', userData);
+        // Simpan secara permanen via Service
+        await _authService.saveAuth(token, userData);
 
+        // Pindah ke Dashboard Organisasi tanpa bisa 'Back' ke Login
         Get.offAllNamed(Routes.ORGANIZATION);
         _clearControllers();
       } else {
-        // Updated: Pesan error login
-        String msg = response.body?['message'] ?? "Invalid email or password!";
+        String msg = response.body?['message'] ?? "Email atau password salah!";
         _showError(msg);
       }
     } catch (e) {
-      _showError("Connection failed. Please check your internet.");
+      _showError("Gagal terhubung ke server. Periksa koneksi internet.");
     } finally {
       isLoading.value = false;
     }
   }
 
+  // Menangani alur registrasi
   void register() async {
     if (nameController.text.isEmpty) {
-      _showError("Please enter your full name.");
+      _showError("Silakan masukkan nama lengkap.");
       return;
     }
     if (!_validate()) return;
@@ -64,35 +69,47 @@ class AuthController extends GetxController {
       });
 
       if (response.isOk) {
+        // Kembali ke halaman Login
         Get.back();
         Get.snackbar(
-          "Success", // "Sukses"
-          "Account for ${nameController.text} created! Please sign in.",
+          "Sukses",
+          "Akun ${nameController.text} berhasil dibuat! Silakan masuk.",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
         );
         _clearControllers();
       } else {
-        // Updated: Pesan error register
         String msg =
-            response.body?['message'] ??
-            "Registration failed. Try another email.";
+            response.body?['message'] ?? "Registrasi gagal. Coba email lain.";
         _showError(msg);
       }
     } catch (e) {
-      _showError("Failed to connect to server during registration.");
+      _showError("Terjadi kesalahan saat mendaftar.");
     } finally {
       isLoading.value = false;
     }
   }
 
+  // Logout menggunakan Service
+  void logout() {
+    _authService.clearAuth();
+    Get.offAllNamed(Routes.LOGIN);
+  }
+
+  // Toggle mata pada password field
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  // Validasi input sederhana
   bool _validate() {
     if (!GetUtils.isEmail(emailController.text)) {
-      _showError("Please enter a valid email address.");
+      _showError("Format email tidak valid.");
       return false;
     }
     if (passwordController.text.length < 6) {
-      _showError("Password must be at least 6 characters!");
+      _showError("Password minimal harus 6 karakter!");
       return false;
     }
     return true;
@@ -100,11 +117,13 @@ class AuthController extends GetxController {
 
   void _showError(String message) {
     Get.snackbar(
-      "Error",
+      "Terjadi Kesalahan",
       message,
       backgroundColor: Colors.redAccent,
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(12),
     );
   }
 
@@ -114,8 +133,12 @@ class AuthController extends GetxController {
     nameController.clear();
   }
 
-  void logout() {
-    storage.erase();
-    Get.offAllNamed(Routes.LOGIN);
+  @override
+  void onClose() {
+    // Bersihkan memory controller saat tidak digunakan
+    emailController.dispose();
+    passwordController.dispose();
+    nameController.dispose();
+    super.onClose();
   }
 }

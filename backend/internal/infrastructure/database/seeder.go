@@ -35,7 +35,7 @@ func seedSuperAdmin(db *sqlx.DB) {
 			"admin_hasan", // <--- Username baru
 			"owner@smartallo.com",
 			string(hashedPassword),
-			"SUPERADMIN",
+			"SUPER_ADMIN",
 			"PRO",
 			time.Now())
 

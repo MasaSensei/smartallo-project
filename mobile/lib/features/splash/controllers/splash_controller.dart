@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
-import '../../../routes/app_routes.dart';
+import 'package:mobile/features/auth/services/auth_service.dart';
+import 'package:mobile/routes/app_routes.dart';
 
 class SplashController extends GetxController {
+  // Panggil AuthService yang sudah standby di memori
+  AuthService get _authService => Get.find<AuthService>();
   @override
   void onInit() {
     super.onInit();
@@ -9,10 +12,16 @@ class SplashController extends GetxController {
   }
 
   void _startApp() async {
-    // Kasih napas 3 detik buat user liat animasi/logo Bos
+    // 1. Kasih napas 3 detik buat user liat branding SmartAllo
     await Future.delayed(const Duration(seconds: 3));
 
-    // Nanti di sini bisa tambah logic: GetStorage().read('isLogin')
-    Get.offAllNamed(Routes.LOGIN);
+    // 2. Cek status login dari Service
+    if (_authService.isLoggedIn) {
+      // JOS! Token ada, langsung masuk ke Dashboard Organisasi
+      Get.offAllNamed(Routes.ORGANIZATION);
+    } else {
+      // Token kosong, suruh login dulu
+      Get.offAllNamed(Routes.LOGIN);
+    }
   }
 }

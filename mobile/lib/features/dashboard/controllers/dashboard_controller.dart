@@ -133,7 +133,7 @@ class DashboardController extends GetxController {
   // --- Actions ---
 
   Future<void> saveTransaction() async {
-    final amountText = amountController.text.trim();
+    final rawAmount = amountController.text.replaceAll('.', '').trim();
     final descText = descriptionController.text.trim();
     final orgId = orgCtrl.selectedOrg.value?.id;
 
@@ -146,11 +146,13 @@ class DashboardController extends GetxController {
       orElse: () => null,
     );
 
-    if (pocket == null ||
-        category == null ||
-        amountText.isEmpty ||
-        orgId == null) {
+    if (pocket == null || category == null || orgId == null) {
       _showError("Please complete all fields.");
+      return;
+    }
+
+    if (rawAmount.isEmpty) {
+      _showError("Please enter amount.");
       return;
     }
 
@@ -162,7 +164,7 @@ class DashboardController extends GetxController {
           "org_id": orgId,
           "source_pocket_id": pocket['id'],
           "category_id": category['id'],
-          "total_amount": amountText,
+          "total_amount": int.parse(rawAmount),
           "type": isIncome.value ? "IN" : "OUT",
           "description": descText.isEmpty ? "Transaction via Mobile" : descText,
         },
@@ -170,21 +172,30 @@ class DashboardController extends GetxController {
       );
 
       if (response.isOk) {
-        Get.back();
+        // 1. Ambil data yang dibutuhkan dulu sebelum controller mati
+        final currentOrgId = orgId;
+
+        // 2. Clear data input
         amountController.clear();
         descriptionController.clear();
-        // Refresh everything: dashboard data + organization balance/chart
-        await Future.wait([
-          fetchAllData(),
-          orgCtrl.syncSelectedOrgDetails(orgId),
-        ]);
+
+        // 3. Tutup Bottom Sheet
+        Get.back();
+
+        // 4. Baru jalankan refresh data
+        // Gunakan Future.microtask atau pastikan tidak akses controller yang sudah mati
+        await fetchAllData();
+        await orgCtrl.syncSelectedOrgDetails(currentOrgId);
 
         _showSuccess("Transaction recorded.");
       } else {
         _showError(response.body?['message'] ?? "Save failed.");
       }
     } finally {
-      isLoading.value = false;
+      // Cek apakah controller masih hidup sebelum ubah isLoading
+      if (!isClosed) {
+        isLoading.value = false;
+      }
     }
   }
 

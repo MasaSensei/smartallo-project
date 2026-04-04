@@ -79,11 +79,13 @@ class ManagementController extends GetxController {
     String name,
     double alloc,
     double target,
+    double balance, // <--- Tambah parameter balance
   ) async {
     final res = await _connect.put("${ApiConstants.pockets}/$id", {
       'name': name,
       'allocation_rule': alloc,
       'target_amount': target,
+      'balance': balance, // <--- Kirim ke backend
       'org_id': _orgId,
     }, headers: _headers);
 

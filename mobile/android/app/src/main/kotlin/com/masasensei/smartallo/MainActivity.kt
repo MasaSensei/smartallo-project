@@ -1,4 +1,4 @@
-package com.example.smartallo
+package com.masasensei.smartallo
 
 import io.flutter.embedding.android.FlutterActivity
 

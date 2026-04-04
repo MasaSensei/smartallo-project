@@ -2,7 +2,10 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/core/utils/currency_input_formatter.dart';
 import 'package:mobile/core/widgets/amount_text.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controllers/management_controller.dart';
@@ -293,17 +296,43 @@ class ManagementView extends GetView<ManagementController> {
   // --- MODERN FORM POCKET ---
   void _showPocketForm({dynamic pocket}) {
     final isEdit = pocket != null;
+
+    // Format awal untuk controller agar saat edit muncul dengan titik
+    final formatter = NumberFormat.decimalPattern('id_ID');
+
     final nameCtrl = TextEditingController(text: isEdit ? pocket['name'] : "");
     final allocCtrl = TextEditingController(
       text: isEdit ? pocket['allocation_rule'].toString() : "0",
     );
+
+    // Gunakan formatter untuk nilai awal saat Edit
+    final targetValue =
+        isEdit
+            ? (double.tryParse(pocket['target_amount']?.toString() ?? "0") ?? 0)
+            : 0.0;
     final targetCtrl = TextEditingController(
-      text: isEdit ? (pocket['target_amount']?.toString() ?? "") : "",
+      text: isEdit ? formatter.format(targetValue) : "",
+    );
+
+    final balanceValue =
+        isEdit
+            ? (double.tryParse(pocket['balance']?.toString() ?? "0") ?? 0)
+            : 0.0;
+    final balanceCtrl = TextEditingController(
+      text: isEdit ? formatter.format(balanceValue) : "0",
     );
 
     Get.bottomSheet(
-      _modernSheetWrapper(isEdit ? "Update Financial Goal" : "New Pocket", [
+      _modernSheetWrapper(isEdit ? "Update Pocket Details" : "New Pocket", [
         _modernInput("Pocket Name", Icons.label_outline, nameCtrl),
+        const SizedBox(height: 16),
+        _modernInput(
+          "Current Balance (Adjust)",
+          Icons.account_balance_wallet_outlined,
+          balanceCtrl,
+          isNumber: true,
+          inputFormatters: [CurrencyInputFormatter()], // PAKAI DI SINI
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -313,6 +342,7 @@ class ManagementView extends GetView<ManagementController> {
                 Icons.percent,
                 allocCtrl,
                 isNumber: true,
+                // Tidak perlu currency formatter untuk persentase
               ),
             ),
             const SizedBox(width: 12),
@@ -322,20 +352,34 @@ class ManagementView extends GetView<ManagementController> {
                 Icons.track_changes,
                 targetCtrl,
                 isNumber: true,
+                inputFormatters: [CurrencyInputFormatter()], // PAKAI DI SINI
               ),
             ),
           ],
         ),
         const SizedBox(height: 32),
         _gradientButton(isEdit ? "Update Pocket" : "Activate Pocket", () {
+          // --- PENTING: Unformat sebelum parse ---
+          double parseCurrency(String text) {
+            String clean = text.replaceAll(RegExp(r'[^0-9]'), '');
+            return double.tryParse(clean) ?? 0;
+          }
+
           final alloc = double.tryParse(allocCtrl.text) ?? 0;
-          final target = double.tryParse(targetCtrl.text) ?? 0;
+          final target = parseCurrency(
+            targetCtrl.text,
+          ); // Gunakan helper unformat
+          final balance = parseCurrency(
+            balanceCtrl.text,
+          ); // Gunakan helper unformat
+
           isEdit
               ? controller.updatePocket(
                 pocket['id'],
                 nameCtrl.text,
                 alloc,
                 target,
+                balance,
               )
               : controller.addPocket(nameCtrl.text, alloc, target);
         }),
@@ -409,10 +453,12 @@ class ManagementView extends GetView<ManagementController> {
     IconData icon,
     TextEditingController ctrl, {
     bool isNumber = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextField(
       controller: ctrl,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      inputFormatters: inputFormatters,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: AppTheme.primary, size: 20),

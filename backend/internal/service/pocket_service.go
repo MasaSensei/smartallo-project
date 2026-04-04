@@ -130,14 +130,15 @@ func (s *PocketService) UpdatePocket(ctx context.Context, pocket *domain.Pocket)
 
 	// 2. Eksekusi Update
 	queryUpdate := `
-		UPDATE pockets 
-		SET name = $1, allocation_rule = $2, target_amount = $3, 
-			self_tax_flat = $4, self_tax_percentage = $5
-		WHERE id = $6 AND org_id = $7`
+    UPDATE pockets 
+    SET name = $1, allocation_rule = $2, target_amount = $3, 
+        self_tax_flat = $4, self_tax_percentage = $5, balance = $6
+    WHERE id = $7 AND org_id = $8`
 
 	_, err = s.db.ExecContext(ctx, queryUpdate,
 		pocket.Name, pocket.AllocationRule, pocket.TargetAmount,
 		pocket.SelfTaxFlat, pocket.SelfTaxPercentage,
+		pocket.Balance, // <--- Masukkan nilai balance baru
 		pocket.ID, pocket.OrgID)
 
 	// 3. Audit Log (Async)
