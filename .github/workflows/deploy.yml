@@ -36,7 +36,7 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /config/smartallo
+            cd config/smartallo
             docker compose pull
             export DB_HOST=postgres
             export DB_PORT=5432
