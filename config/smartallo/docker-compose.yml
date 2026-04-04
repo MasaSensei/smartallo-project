@@ -36,8 +36,6 @@ services:
     image: masasensei/smartallo-admin:latest
     container_name: smartallo-admin
     restart: always
-    ports:
-      - "5173:80"
     networks:
       - smartallo-net
 
