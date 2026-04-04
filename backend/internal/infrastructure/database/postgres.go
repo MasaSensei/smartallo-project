@@ -17,12 +17,12 @@ func ConnectDB() *sqlx.DB {
 		log.Println("Warning: .env file tidak ditemukan, menggunakan system env")
 	}
 
-	host := cleanString(os.Getenv("DB_HOST_SUPABASE"))
-	port := cleanString(os.Getenv("DB_PORT_SUPABASE"))
-	user := cleanString(os.Getenv("DB_USER_SUPABASE"))
-	pass := cleanString(os.Getenv("DB_PASSWORD_SUPABASE"))
-	dbname := cleanString(os.Getenv("DB_NAME_SUPABASE"))
-	ssl := cleanString(os.Getenv("DB_SSLMODE_SUPABASE"))
+	host := cleanString(os.Getenv("DB_HOST"))
+	port := cleanString(os.Getenv("DB_PORT"))
+	user := cleanString(os.Getenv("DB_USER"))
+	pass := cleanString(os.Getenv("DB_PASSWORD"))
+	dbname := cleanString(os.Getenv("DB_NAME"))
+	ssl := cleanString(os.Getenv("DB_SSLMODE"))
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, pass, dbname, ssl)

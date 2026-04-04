@@ -1,14 +1,31 @@
-version: "3.8"
+version: "3.9"
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartallo-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - smartallo-data:/var/lib/postgresql/data
+    networks:
+      - smartallo-net
+
   api:
     image: masasensei/smartallo-api:latest
     container_name: smartallo-api
     restart: always
-    ports:
-      - "8080:8080"
     env_file:
       - .env
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
     networks:
       - smartallo-net
 
@@ -24,3 +41,6 @@ services:
 networks:
   smartallo-net:
     driver: bridge
+
+volumes:
+  smartallo-data:
