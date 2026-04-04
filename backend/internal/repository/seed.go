@@ -27,7 +27,9 @@ func SeedDefaultOrgData(ctx context.Context, tx sqlx.ExtContext, orgID uuid.UUID
 
 	// 2. Seed Default Pocket (Jika belum ada di logic sebelumnya)
 	// Kita cek dulu apakah sudah ada kantong utama, kalau belum buatkan
-	pocketQuery := `INSERT INTO pockets (id, org_id, name, balance, is_main) VALUES ($1, $2, $3, $4, $5)`
+	pocketQuery := `
+        INSERT INTO pockets (id, org_id, name, balance, allocation_rule, is_main) 
+        VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err = tx.ExecContext(ctx, pocketQuery, uuid.New(), orgID, "Kantong Utama", 0, true)
 
 	return err

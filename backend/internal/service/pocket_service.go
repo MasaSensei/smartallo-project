@@ -69,13 +69,17 @@ func (s *PocketService) CreatePocket(ctx context.Context, pocket *domain.Pocket)
 		return errors.New("limit kantong tercapai. Upgrade ke PRO untuk menambah lebih dari 2 kantong!")
 	}
 
+	if pocket.AllocationRule == 0 {
+		pocket.AllocationRule = 100
+	}
+
 	var totalAllocation float64
 	err = s.db.GetContext(ctx, &totalAllocation,
 		"SELECT COALESCE(SUM(allocation_rule), 0) FROM pockets WHERE org_id = $1 AND deleted_at IS NULL",
 		pocket.OrgID)
 
 	if totalAllocation+pocket.AllocationRule > 100 {
-		return errors.New("total alokasi kantong tidak boleh melebihi 100%")
+		return errors.New("total alokasi kantong melebihi 100%. Kurangi alokasi kantong lain terlebih dahulu.")
 	}
 
 	// 2. Eksekusi Insert
