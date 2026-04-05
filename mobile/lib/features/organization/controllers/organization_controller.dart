@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../services/organization_service.dart';
 import '../data/models/organization_model.dart';
 
 class OrganizationController extends GetxController {
   var isLoading = false.obs;
   var isCreating = false.obs;
   final storage = GetStorage();
-  final _connect = GetConnect();
 
   final organizations = <OrganizationModel>[].obs;
   final selectedOrg = Rxn<OrganizationModel>();
@@ -18,99 +17,70 @@ class OrganizationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _connect.timeout = const Duration(seconds: 10);
     currentTier.value = storage.read('user_tier') ?? 'FREE';
     fetchWorkspaces();
   }
 
-  Map<String, String> _getHeaders() {
-    return {
-      'Authorization': 'Bearer ${storage.read('token')}',
-      'Accept': 'application/json',
-    };
-  }
-
   Future<void> fetchWorkspaces() async {
-    final token = storage.read('token');
-
-    if (token == null) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return fetchWorkspaces(); // Rekursif sekali saja
-    }
-
     try {
       isLoading.value = true;
-      final response = await _connect.get(
-        ApiConstants.organizations,
-        headers: _getHeaders(),
-      );
+      final result = await OrganizationService.fetchAll();
 
-      if (response.isOk) {
-        // 1. Sync Tier
-        if (response.body['tier'] != null) {
-          currentTier.value = response.body['tier'];
-          storage.write('user_tier', currentTier.value);
-        }
+      if (result != null) {
+        final List? data = result['data'];
 
-        // 2. Map List
-        final List? data = response.body['data'];
         if (data != null) {
           final list = data.map((e) => OrganizationModel.fromJson(e)).toList();
           organizations.assignAll(list);
-
-          // 3. Auto Select Workspace terakhir
-          final savedId = storage.read('active_org_id');
-          if (savedId != null && organizations.any((o) => o.id == savedId)) {
-            selectedOrg.value = organizations.firstWhere(
-              (o) => o.id == savedId,
-            );
-          } else if (organizations.isNotEmpty) {
-            selectedOrg.value = organizations.first;
-          }
-
-          // 4. Sync detail saldo untuk org yang terpilih
-          if (selectedOrg.value != null) {
-            syncSelectedOrgDetails(selectedOrg.value!.id);
-          }
+          _handleAutoSelect();
         }
+
+        // Update Tier dari Storage saja dulu kalau BE belum kirim di List
+        currentTier.value = storage.read('user_tier') ?? 'FREE';
       }
+    } catch (e) {
+      print("Error fetch: $e"); // Biar ketahuan kalau mapping Model gagal
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Fungsi sakti untuk ambil detail saldo terbaru dari Go
+  void _handleAutoSelect() {
+    final savedId = storage.read('active_org_id');
+    if (savedId != null && organizations.any((o) => o.id == savedId)) {
+      selectedOrg.value = organizations.firstWhere((o) => o.id == savedId);
+    } else if (organizations.isNotEmpty) {
+      selectedOrg.value = organizations.first;
+    }
+
+    if (selectedOrg.value != null) {
+      syncSelectedOrgDetails(selectedOrg.value!.id);
+    }
+  }
+
   Future<void> syncSelectedOrgDetails(String orgId) async {
-    try {
-      final response = await _connect.get(
-        "${ApiConstants.organizations}/$orgId",
-        headers: _getHeaders(),
-      );
-      if (response.isOk) {
-        final detail = OrganizationModel.fromJson(response.body['data']);
-        // Update data di list dan selected variable
-        int index = organizations.indexWhere((o) => o.id == orgId);
-        if (index != -1) organizations[index] = detail;
-        if (selectedOrg.value?.id == orgId) {
-          selectedOrg.value = detail;
-        }
+    // Panggil service yang nembak endpoint detail
+    final detail = await OrganizationService.getDetail(orgId);
+
+    if (detail != null) {
+      int index = organizations.indexWhere((o) => o.id == orgId);
+      if (index != -1) {
+        organizations[index] = detail; // Update list biar saldo berubah
       }
-    } catch (e) {
-      print("Sync detail failed: $e");
+      if (selectedOrg.value?.id == orgId) {
+        selectedOrg.value = detail; // Update state yang lagi dipake
+      }
     }
   }
 
   void selectWorkspace(OrganizationModel org) async {
     selectedOrg.value = org;
     storage.write('active_org_id', org.id);
-
-    // Sebelum pindah, pastikan data saldo terbaru ditarik
     await syncSelectedOrgDetails(org.id);
-
     Get.offAllNamed('/dashboard');
   }
 
-  void createWorkspace() async {
+  Future<void> createWorkspace() async {
     final name = orgNameController.text.trim();
     if (name.isEmpty) {
       _showError("Workspace name cannot be empty!");
@@ -119,25 +89,21 @@ class OrganizationController extends GetxController {
 
     try {
       isCreating.value = true;
-      final response = await _connect.post(ApiConstants.organizations, {
-        "name": name,
-      }, headers: _getHeaders());
+      final result = await OrganizationService.create(name);
 
-      if (response.isOk) {
+      if (result != null && result['success'] == true) {
         Get.back();
         orgNameController.clear();
         Get.snackbar(
           "Success",
-          "Workspace '$name' has been created!",
+          "Workspace '$name' created!",
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
         fetchWorkspaces();
       } else {
-        _showError(response.body?['message'] ?? "Failed to create workspace.");
+        _showError(result?['message'] ?? "Failed to create workspace.");
       }
-    } catch (e) {
-      _showError("Failed to connect to the server.");
     } finally {
       isCreating.value = false;
     }

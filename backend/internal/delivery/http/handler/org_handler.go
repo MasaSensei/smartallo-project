@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/MasaSensei/smartallo-backend/internal/service"
@@ -40,11 +41,25 @@ func (h *OrgHandler) Create(c echo.Context) error {
 }
 
 func (h *OrgHandler) List(c echo.Context) error {
-	userID := c.Get("user_id").(string)
+	userIDInterface := c.Get("user_id")
+	if userIDInterface == nil {
+		fmt.Println("[HANDLER ERROR] Missing user_id in context")
+		return c.JSON(http.StatusUnauthorized, map[string]string{"message": "Unauthorized"})
+	}
+
+	userID := userIDInterface.(string)
+	fmt.Printf("[HANDLER LOG] Processing List Org for User: %s\n", userID)
+
 	data, err := h.service.GetList(c.Request().Context(), uuid.MustParse(userID))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+		// LOG ERROR 500: Pesan ini yang akan muncul di terminal Go
+		fmt.Printf("[HANDLER ERROR 500] List Org: %v\n", err)
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"message": "Internal Server Error",
+			"debug":   err.Error(), // Munculkan di respons sementara buat debug
+		})
 	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{"data": data})
 }
 

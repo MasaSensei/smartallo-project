@@ -45,10 +45,10 @@ type Pocket struct {
 	OrgID             uuid.UUID        `json:"org_id" db:"org_id"`
 	Name              string           `json:"name" db:"name"`
 	Balance           decimal.Decimal  `json:"balance" db:"balance"`
-	AllocationRule    float64          `json:"allocation_rule" db:"allocation_rule"`
+	AllocationRule    float64          `json:"allocation_rule" db:"allocation_rule"` // Di SQL sekarang FLOAT
 	SelfTaxFlat       decimal.Decimal  `json:"self_tax_flat" db:"self_tax_flat"`
 	SelfTaxPercentage float64          `json:"self_tax_percentage" db:"self_tax_percentage"`
-	TargetAmount      *decimal.Decimal `db:"target_amount" json:"target_amount"`
+	TargetAmount      *decimal.Decimal `json:"target_amount" db:"target_amount"`
 	IsMain            bool             `json:"is_main" db:"is_main"`
 	CreatedAt         time.Time        `json:"created_at" db:"created_at"`
 	DeletedAt         *time.Time       `json:"deleted_at,omitempty" db:"deleted_at"`
@@ -66,18 +66,21 @@ type Category struct {
 
 // Transaction
 type Transaction struct {
-	ID               uuid.UUID       `json:"id" db:"id"`
-	OrgID            uuid.UUID       `json:"org_id" db:"org_id"`
-	CreatorID        uuid.UUID       `json:"creator_id" db:"creator_id"`
-	CategoryID       uuid.UUID       `json:"category_id" db:"category_id"`
-	SourcePocketID   *uuid.UUID      `json:"source_pocket_id,omitempty" db:"source_pocket_id"` // FK ke Pockets
-	Type             string          `json:"type" db:"type"`                                   // IN / OUT
-	TotalAmount      decimal.Decimal `json:"total_amount" db:"total_amount"`
-	Description      string          `json:"description" db:"description"`
-	Status           string          `json:"status" db:"status"`
-	CategoryName     string          `json:"category_name" db:"category_name"`
-	SourcePocketName string          `json:"source_pocket_name" db:"source_pocket_name"`
-	CreatedAt        time.Time       `json:"created_at" db:"created_at"`
+	ID         uuid.UUID `json:"id" db:"id"`
+	OrgID      uuid.UUID `json:"org_id" db:"org_id"`
+	CreatorID  uuid.UUID `json:"creator_id" db:"creator_id"`
+	CategoryID uuid.UUID `json:"category_id" db:"category_id"`
+
+	// Ganti/Tambah field ini agar sesuai dengan pemanggilan di Service
+	StorageID      uuid.UUID  `json:"storage_id" db:"storage_id"`        // Fisik (Wajib ada di SQL)
+	SourcePocketID *uuid.UUID `json:"source_pocket_id,omitempty" db:"-"` // Virtual (Gunakan db:"-" jika tidak ada di tabel transactions utama)
+
+	ToStorageID *uuid.UUID      `json:"to_storage_id,omitempty" db:"to_storage_id"`
+	Type        string          `json:"type" db:"type"` // IN, OUT, TRANSFER
+	TotalAmount decimal.Decimal `json:"total_amount" db:"total_amount"`
+	Description string          `json:"description" db:"description"`
+	Status      string          `json:"status" db:"status"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
 }
 
 // TransactionDetail
@@ -131,4 +134,14 @@ type SubscriptionHistory struct {
 	StartDate time.Time `json:"start_date" db:"start_date"`
 	EndDate   time.Time `json:"end_date" db:"end_date"`
 	IsActive  bool      `json:"is_active" db:"is_active"`
+}
+
+type Storage struct {
+	ID        uuid.UUID       `json:"id" db:"id"`
+	OrgID     uuid.UUID       `json:"org_id" db:"org_id"`
+	Name      string          `json:"name" db:"name"`
+	Type      string          `json:"type" db:"type"` // BANK, CASH, E-WALLET
+	Balance   decimal.Decimal `json:"balance" db:"balance"`
+	CreatedAt time.Time       `json:"created_at" db:"created_at"`
+	DeletedAt *time.Time      `json:"deleted_at,omitempty" db:"deleted_at"`
 }

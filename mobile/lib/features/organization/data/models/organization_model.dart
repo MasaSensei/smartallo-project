@@ -19,24 +19,21 @@ class OrganizationModel {
     this.weeklyChart,
   });
 
-  factory OrganizationModel.fromJson(Map<String, dynamic> json) =>
-      OrganizationModel(
-        id: json['id'] ?? '',
-        name: json['name'] ?? '',
-        type: json['type'] ?? 'PERSONAL',
-        // Note: Check if your JSON keys are 'total_income' or 'TotalIncome'
-        // to match your Go struct tags
-        totalIncome: json['total_income']?.toString(),
-        totalExpense: json['total_expense']?.toString(),
-        totalBalance: json['total_balance']?.toString(),
-        createdAt: DateTime.parse(
-          json['created_at'] ?? DateTime.now().toIso8601String(),
-        ),
-        weeklyChart:
-            json['weekly_chart'] != null
-                ? WeeklyChartModel.fromJson(json['weekly_chart'])
-                : null,
-      );
+  factory OrganizationModel.fromJson(Map<String, dynamic> json) {
+    return OrganizationModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      type: json['type'] ?? '',
+      // Decimal dari Go sering dikirim sebagai String di JSON
+      totalIncome: json['total_income']?.toString() ?? '0',
+      totalExpense: json['total_expense']?.toString() ?? '0',
+      totalBalance: json['total_balance']?.toString() ?? '0',
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : DateTime.now(),
+    );
+  }
 }
 
 class WeeklyChartModel {

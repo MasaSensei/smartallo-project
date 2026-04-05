@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,9 +68,10 @@ func (r *OrgRepository) Create(ctx context.Context, org Organization) error {
 }
 
 func (r *OrgRepository) GetUserOrgs(ctx context.Context, userID uuid.UUID) ([]OrgWithStats, error) {
-	var orgs []OrgWithStats
+	orgs := make([]OrgWithStats, 0) // Gunakan make agar tidak null di JSON
+
 	query := `
-        SELECT o.*,
+        SELECT o.id, o.owner_id, o.name, o.type, o.created_at,
             COALESCE((SELECT SUM(total_amount) FROM transactions WHERE org_id = o.id AND type = 'IN'), 0) as total_income,
             COALESCE((SELECT SUM(total_amount) FROM transactions WHERE org_id = o.id AND type = 'OUT'), 0) as total_expense,
             COALESCE((SELECT SUM(balance) FROM pockets WHERE org_id = o.id AND deleted_at IS NULL), 0) as total_balance
@@ -77,10 +79,16 @@ func (r *OrgRepository) GetUserOrgs(ctx context.Context, userID uuid.UUID) ([]Or
         JOIN org_members om ON o.id = om.org_id
         WHERE om.user_id = $1 AND o.deleted_at IS NULL
         ORDER BY o.created_at DESC`
-	err := r.db.SelectContext(ctx, &orgs, query, userID)
-	return orgs, err
-}
 
+	err := r.db.SelectContext(ctx, &orgs, query, userID)
+	if err != nil {
+		// LOG DI REPO: Tahu persis masalah Query/Mapping
+		fmt.Printf("[REPO ERROR] GetUserOrgs for User %s: %v\n", userID, err)
+		return nil, err
+	}
+
+	return orgs, nil
+}
 func (r *OrgRepository) CountUserOrgs(ctx context.Context, userID uuid.UUID) (int, string, error) {
 	var res struct {
 		Count int    `db:"count"`

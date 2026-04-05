@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/routes/app_routes.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -30,16 +31,14 @@ class AuthController extends GetxController {
       });
 
       if (response.isOk) {
-        // Ambil data dari response backend Go
         final token = response.body['data']['token'];
         final userData = response.body['data']['user'];
 
-        // Simpan secara permanen via Service
         await _authService.saveAuth(token, userData);
 
-        // Pindah ke Dashboard Organisasi tanpa bisa 'Back' ke Login
+        // Get.offAllNamed akan menghancurkan controller ini,
+        // jadi tidak perlu clear manual di sini.
         Get.offAllNamed(Routes.ORGANIZATION);
-        _clearControllers();
       } else {
         String msg = response.body?['message'] ?? "Email atau password salah!";
         _showError(msg);
@@ -116,14 +115,28 @@ class AuthController extends GetxController {
   }
 
   void _showError(String message) {
+    String friendlyMessage = message;
+
+    // Jika pesan mengandung bau-bau database (pq, sql, dll)
+    if (message.contains("pq:") ||
+        message.contains("server error") ||
+        message.contains("500")) {
+      friendlyMessage =
+          "Waduh, server kami sedang istirahat sejenak. Coba lagi ya! ✨";
+    }
+
     Get.snackbar(
-      "Terjadi Kesalahan",
-      message,
-      backgroundColor: Colors.redAccent,
+      "Ups!",
+      friendlyMessage,
+      backgroundColor: AppTheme.danger.withOpacity(
+        0.9,
+      ), // Pakai warna merah Ai Hoshino
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(12),
+      duration: const Duration(seconds: 4),
+      margin: const EdgeInsets.all(15),
+      borderRadius: 20, // Tetap imut
+      icon: const Icon(Icons.error_outline_rounded, color: Colors.white),
     );
   }
 
@@ -136,9 +149,9 @@ class AuthController extends GetxController {
   @override
   void onClose() {
     // Bersihkan memory controller saat tidak digunakan
-    emailController.dispose();
-    passwordController.dispose();
-    nameController.dispose();
+    // emailController.dispose();
+    // passwordController.dispose();
+    // nameController.dispose();
     super.onClose();
   }
 }

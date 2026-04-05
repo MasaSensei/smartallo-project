@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/MasaSensei/smartallo-backend/internal/domain"
 	"github.com/MasaSensei/smartallo-backend/internal/repository"
@@ -58,7 +59,14 @@ func (s *OrgService) CreateWorkspace(ctx context.Context, userID uuid.UUID, name
 }
 
 func (s *OrgService) GetList(ctx context.Context, userID uuid.UUID) ([]repository.OrgWithStats, error) {
-	return s.repo.GetUserOrgs(ctx, userID)
+	data, err := s.repo.GetUserOrgs(ctx, userID)
+	if err != nil {
+		fmt.Printf("[SERVICE ERROR] GetList failed: %v\n", err)
+		return nil, err
+	}
+
+	fmt.Printf("[SERVICE LOG] Successfully fetched %d organizations for user %s\n", len(data), userID)
+	return data, nil
 }
 
 func (s *OrgService) GetByID(ctx context.Context, orgID uuid.UUID, userID uuid.UUID) (*repository.OrgWithStats, error) {

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/dashboard/data/models/pocket_model.dart';
 import '../../../../core/widgets/amount_text.dart';
 
 class PocketCard extends StatelessWidget {
-  final Map<String, dynamic> pocket;
+  // GANTI: Dari Map ke PocketModel
+  final PocketModel pocket;
 
   const PocketCard({super.key, required this.pocket});
 
-  // --- HELPER UNTUK PARSING WARNA ---
   Color _parseColor(String? hexString) {
     if (hexString == null || hexString.isEmpty) return Colors.blueGrey;
     try {
@@ -15,14 +16,14 @@ class PocketCard extends StatelessWidget {
       buffer.write(hexString.replaceFirst('#', ''));
       return Color(int.parse(buffer.toString(), radix: 16));
     } catch (e) {
-      return Colors.blueGrey; // Balikin warna default kalau format salah
+      return Colors.blueGrey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Panggil helper di sini
-    final Color mainColor = _parseColor(pocket['color']);
+    // AKSES: pocket.color (bukan pocket['color'])
+    final Color mainColor = _parseColor(pocket.color);
 
     return Container(
       width: 260,
@@ -33,10 +34,7 @@ class PocketCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            mainColor, // Pakai warna hasil parsing
-            mainColor.withOpacity(0.6),
-          ],
+          colors: [mainColor, mainColor.withOpacity(0.6)],
         ),
         boxShadow: [
           BoxShadow(
@@ -55,7 +53,7 @@ class PocketCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  pocket['name'] ?? "Pocket", // Safety null
+                  pocket.name, // AKSES: pocket.name
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -80,8 +78,8 @@ class PocketCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               AmountText(
-                // Pastikan saldo diparsing ke double/num dulu biar aman
-                double.tryParse(pocket['balance']?.toString() ?? '0') ?? 0.0,
+                // AKSES: pocket.balance (asumsi sudah num/double di model)
+                pocket.balance.toDouble(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 26,

@@ -82,7 +82,8 @@ class AddTransactionSheet extends GetView<DashboardController> {
                 _buildSmartDropdown(
                   label: "Pocket",
                   value: controller.selectedPocket.value,
-                  items: controller.rxPocketOptions,
+                  items:
+                      controller.rxPocketOptions, // Pastikan ini List<String>
                   onChanged: (val) => controller.selectedPocket.value = val!,
                   onAddNew: (val) => controller.addCustomPocket(val),
                 ),
@@ -92,7 +93,8 @@ class AddTransactionSheet extends GetView<DashboardController> {
                 _buildSmartDropdown(
                   label: "Category",
                   value: controller.selectedCategory.value,
-                  items: controller.rxCategoryOptions,
+                  items:
+                      controller.rxCategoryOptions, // Pastikan ini List<String>
                   onChanged: (val) => controller.selectedCategory.value = val!,
                   onAddNew: (val) => controller.addCustomCategory(val),
                 ),

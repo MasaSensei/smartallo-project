@@ -306,9 +306,12 @@ class DashboardView extends GetView<DashboardController> {
         itemCount: controller.rxTransactions.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
+          // SEKARANG tx ADALAH TransactionModel
           final tx = controller.rxTransactions[index];
-          final amt = double.tryParse(tx['total_amount'].toString()) ?? 0.0;
-          final bool isIncome = tx['type'] == 'IN';
+
+          // AKSES PROPERTY LANGSUNG (Bukan pakai ['...'])
+          final double amt = tx.totalAmount.toDouble();
+          final bool isIncome = tx.type == 'IN';
 
           return Container(
             padding: const EdgeInsets.all(16),
@@ -334,36 +337,30 @@ class DashboardView extends GetView<DashboardController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        tx['category_name'] ?? "Uncategorized",
+                        // Gunakan property categoryName dari model
+                        tx.categoryName ?? "Uncategorized",
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      // --- TAMBAHKAN DESKRIPSI DI SINI ---
-                      if (tx['description'] != null &&
-                          tx['description'].toString().isNotEmpty)
+                      if (tx.description != null && tx.description!.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Text(
-                            tx['description'],
+                            tx.description!,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(
-                                0.6,
-                              ), // Agak redup dibanding kategori
+                              color: Colors.white.withOpacity(0.6),
                               fontSize: 12,
                             ),
                             maxLines: 1,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis, // Biar gak berantakan kalau kepanjangan
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      const SizedBox(
-                        height: 4,
-                      ), // Spasi tambahan sebelum tanggal
+                      const SizedBox(height: 4),
                       Text(
-                        tx['created_at'].toString().split('T')[0],
+                        // Format tanggal simpel
+                        tx.createdAt.toString().split(' ')[0],
                         style: const TextStyle(
                           color: Colors.white38,
                           fontSize: 11,

@@ -12,17 +12,18 @@ import (
 )
 
 func ConnectDB() *sqlx.DB {
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Warning: .env file tidak ditemukan, menggunakan system env")
+		log.Println("Peringatan: Tidak bisa load file .env, menggunakan env system.")
 	}
 
-	host := cleanString(os.Getenv("DB_HOST"))
-	port := cleanString(os.Getenv("DB_PORT"))
-	user := cleanString(os.Getenv("DB_USER"))
-	pass := cleanString(os.Getenv("DB_PASSWORD"))
-	dbname := cleanString(os.Getenv("DB_NAME"))
-	ssl := cleanString(os.Getenv("DB_SSLMODE"))
+	host := cleanString(os.Getenv("DB_HOST_SUPABASE"))
+	port := cleanString(os.Getenv("DB_PORT_SUPABASE"))
+	user := cleanString(os.Getenv("DB_USER_SUPABASE"))
+	pass := cleanString(os.Getenv("DB_PASSWORD_SUPABASE"))
+	dbname := cleanString(os.Getenv("DB_NAME_SUPABASE"))
+	ssl := cleanString(os.Getenv("DB_SSLMODE_SUPABASE"))
 
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, pass, dbname, ssl)

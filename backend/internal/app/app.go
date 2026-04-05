@@ -21,11 +21,12 @@ func Run() {
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	orgRepo := repository.NewOrgRepository(db)
+	txRepo := repository.NewTransactionRepository(db)
 
 	auditService := service.NewAuditService(db)
 	authService := service.NewAuthService(db, jwtSecret)
 	orgService := service.NewOrgService(orgRepo, auditService)
-	txService := service.NewTransactionService(db)
+	txService := service.NewTransactionService(db, txRepo)
 	pocketService := service.NewPocketService(db, auditService)
 	catService := service.NewCategoryService(db, auditService)
 	dashService := service.NewDashboardService(db)
@@ -50,6 +51,7 @@ func Run() {
 	// 4. Panggil Router Terpisah
 	http.SetupRouter(http.RouterConfig{
 		Echo:                e,
+		DB:                  db,
 		AuthHandler:         authHandler,
 		OrgHandler:          orgHandler,
 		TransactionHandler:  txHandler,

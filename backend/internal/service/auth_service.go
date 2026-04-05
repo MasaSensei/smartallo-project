@@ -41,8 +41,16 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 
 	// 2. INSERT ke tabel 'users'
 	queryUser := `INSERT INTO users (id, username, email, password_hash, role, tier, created_at) 
-                  VALUES ($1, $2, $3, $4, $5, $6, NOW())`
-	_, err = tx.ExecContext(ctx, queryUser, userID, username, email, string(hashedPassword), "USER", "FREE")
+              VALUES ($1, $2, $3, $4, $5, $6, NOW())`
+
+	_, err = tx.ExecContext(ctx, queryUser,
+		userID,                 // $1
+		username,               // $2
+		email,                  // $3
+		string(hashedPassword), // $4
+		"USER",                 // $5
+		"FREE",                 // $6
+	)
 	if err != nil {
 		return err
 	}

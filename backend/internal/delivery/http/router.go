@@ -3,15 +3,18 @@ package http
 import (
 	"github.com/MasaSensei/smartallo-backend/internal/delivery/http/handler"
 	"github.com/MasaSensei/smartallo-backend/internal/delivery/http/middleware" // Import middleware kamu
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 )
 
 type RouterConfig struct {
 	Echo                *echo.Echo
+	DB                  *sqlx.DB
 	AuthHandler         *handler.AuthHandler
 	OrgHandler          *handler.OrgHandler
 	TransactionHandler  *handler.TransactionHandler
 	PocketHandler       *handler.PocketHandler
+	StorageHandler      *handler.StorageHandler
 	CategoryHandler     *handler.CategoryHandler
 	DashboardHandler    *handler.DashboardHandler
 	SubscriptionHandler *handler.SubscriptionHandler
@@ -25,7 +28,7 @@ func SetupRouter(config RouterConfig) {
 	config.AuthHandler.Route(auth)
 
 	protected := api.Group("")
-	protected.Use(middleware.JWTMiddleware(config.JwtSecret))
+	protected.Use(middleware.JWTMiddleware(config.DB, config.JwtSecret))
 
 	organizations := protected.Group("/organizations")
 	{
@@ -39,6 +42,8 @@ func SetupRouter(config RouterConfig) {
 	{
 		transactions.POST("", config.TransactionHandler.Create)
 		transactions.GET("/history", config.TransactionHandler.GetHistory)
+		transactions.PUT("/:id", config.TransactionHandler.Update)
+		transactions.DELETE("/:id", config.TransactionHandler.Delete)
 	}
 
 	pockets := protected.Group("/pockets")
@@ -49,6 +54,14 @@ func SetupRouter(config RouterConfig) {
 		pockets.GET("/:id", config.PocketHandler.GetByID) // Tambahkan baris ini
 		pockets.PUT("/:id", config.PocketHandler.Update)
 		pockets.DELETE("/:id", config.PocketHandler.Delete) // Tambahkan juga delete jika belum
+	}
+
+	storages := protected.Group("/storages")
+	{
+		storages.POST("", config.StorageHandler.Create)
+		storages.GET("", config.StorageHandler.ListByOrg)
+		storages.PUT("/:id", config.StorageHandler.Update)
+		storages.DELETE("/:id", config.StorageHandler.Delete)
 	}
 
 	categories := protected.Group("/categories")

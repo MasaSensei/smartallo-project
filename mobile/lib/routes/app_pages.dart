@@ -45,7 +45,7 @@ class AppPages {
     ),
 
     GetPage(
-      name: '/organization',
+      name: Routes.ORGANIZATION,
       page: () => const OrganizationView(),
       binding: OrganizationBinding(),
       transition:
