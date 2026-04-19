@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/features/dashboard/data/models/pocket_model.dart';
+import 'package:mobile/data/models/pocket_model.dart';
 import '../../../../core/widgets/amount_text.dart';
 
 class PocketCard extends StatelessWidget {

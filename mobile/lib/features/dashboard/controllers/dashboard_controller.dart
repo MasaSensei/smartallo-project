@@ -1,217 +1,156 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mobile/features/dashboard/data/models/category_model.dart';
-import 'package:mobile/features/dashboard/data/models/pocket_model.dart';
-import 'package:mobile/features/dashboard/data/models/transaction_model.dart';
+import 'package:mobile/data/models/category_model.dart';
+import 'package:mobile/data/models/pocket_model.dart';
+import 'package:mobile/data/models/transaction_model.dart';
+import '../../../domain/repositories/dashboard_repository.dart';
 import '../../organization/controllers/organization_controller.dart';
 
-import '../services/dashboard_service.dart';
-
 class DashboardController extends GetxController {
+  final DashboardRepository repository;
   final orgCtrl = Get.find<OrganizationController>();
 
-  // --- Observables (Strongly Typed) ---
+  DashboardController({required this.repository});
+
+  // --- DATA STATES ---
   final rxPockets = <PocketModel>[].obs;
   final rxCategories = <CategoryModel>[].obs;
   final rxTransactions = <TransactionModel>[].obs;
   final isLoading = false.obs;
 
-  // Chart Data
+  // --- CHART DATA ---
   final rxIncomeData = <double>[].obs;
   final rxExpenseData = <double>[].obs;
   final rxChartLabels = <String>[].obs;
 
-  // Form State (Untuk BottomSheet Add Record)
-  final rxPocketOptions = <String>[].obs;
-  final rxCategoryOptions = <String>[].obs;
-  final isIncome = true.obs;
-  final selectedPocket = "".obs;
-  final selectedCategory = "".obs;
-
+  // --- FORM STATES (Sesuai dengan UI Sheet) ---
+  final isIncome = false.obs;
+  final selectedPocket = "".obs; // Untuk Dropdown UI
+  final selectedCategory = "".obs; // Untuk Dropdown UI
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
+
+  // --- GETTERS UNTUK UI ---
+  List<String> get rxPocketOptions => rxPockets.map((e) => e.name).toList();
+
+  List<String> get rxCategoryOptions =>
+      rxCategories
+          .where((c) => c.type == (isIncome.value ? "IN" : "OUT"))
+          .map((e) => e.name)
+          .toList();
 
   @override
   void onInit() {
     super.onInit();
-
-    // Otomatis refresh data kalau user ganti Workspace/Organization
-    ever(orgCtrl.selectedOrg, (_) {
-      fetchAllData();
-      _syncChartData();
-    });
-
+    ever(orgCtrl.selectedOrg, (_) => fetchAllData());
     fetchAllData();
-    _syncChartData();
   }
 
-  /// Sinkronisasi semua data dari Service
   Future<void> fetchAllData() async {
     final orgId = orgCtrl.selectedOrg.value?.id;
     if (orgId == null) return;
 
     try {
       isLoading.value = true;
-
-      // Ambil semua data secara paralel (lebih cepat)
       final results = await Future.wait([
-        DashboardService.getPockets(orgId),
-        DashboardService.getCategories(orgId),
-        DashboardService.getTransactionHistory(orgId, limit: 5),
+        repository
+            .getPockets(), // Backend pake middleware, orgId gak wajib dikirim via param
+        repository.getCategories(),
+        repository.getHistory(limit: 15),
       ]);
 
       rxPockets.assignAll(results[0] as List<PocketModel>);
       rxCategories.assignAll(results[1] as List<CategoryModel>);
       rxTransactions.assignAll(results[2] as List<TransactionModel>);
 
-      _syncPocketOptions();
-      _syncCategoryOptions();
+      _syncDefaultValues();
+      _syncChartData();
     } catch (e) {
-      _showError("Gagal memuat data Dashboard.");
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Mapping data chart dari Organization Controller ke UI Dashboard
+  void _syncDefaultValues() {
+    // Set default pocket kalau kosong
+    if (rxPockets.isNotEmpty && selectedPocket.value.isEmpty) {
+      selectedPocket.value = rxPockets.first.name;
+    }
+
+    // Set default category berdasarkan tipe
+    final typeFilter = isIncome.value ? "IN" : "OUT";
+    final first = rxCategories.firstWhereOrNull((c) => c.type == typeFilter);
+    if (first != null) selectedCategory.value = first.name;
+  }
+
   void _syncChartData() {
     final chart = orgCtrl.selectedOrg.value?.weeklyChart;
     if (chart != null) {
       rxIncomeData.assignAll(chart.income);
       rxExpenseData.assignAll(chart.expense);
       rxChartLabels.assignAll(chart.labels);
-    } else {
-      rxIncomeData.assignAll(List.filled(7, 0.0));
-      rxExpenseData.assignAll(List.filled(7, 0.0));
-      rxChartLabels.assignAll(["M", "T", "W", "T", "F", "S", "S"]);
     }
-  }
-
-  // --- Form Logic ---
-
-  void _syncPocketOptions() {
-    if (rxPockets.isEmpty) return;
-    final names = rxPockets.map((e) => e.name).toList();
-    rxPocketOptions.assignAll(names);
-
-    if (selectedPocket.value.isEmpty || !names.contains(selectedPocket.value)) {
-      selectedPocket.value = names.first;
-    }
-  }
-
-  void _syncCategoryOptions() {
-    final typeFilter = isIncome.value ? "IN" : "OUT";
-    final filtered =
-        rxCategories
-            .where((c) => c.type == typeFilter)
-            .map((e) => e.name)
-            .toList();
-
-    rxCategoryOptions.assignAll(filtered);
-    if (filtered.isNotEmpty) selectedCategory.value = filtered.first;
   }
 
   void setTransactionType(bool val) {
     isIncome.value = val;
-    _syncCategoryOptions();
+    _syncDefaultValues();
   }
 
-  // --- Actions ---
+  // --- HANDLERS DIALOG "ADD NEW" ---
+  void addCustomPocket(String name) => selectedPocket.value = name;
+  void addCustomCategory(String name) => selectedCategory.value = name;
 
   Future<void> saveTransaction() async {
-    final rawAmount = amountController.text.replaceAll('.', '').trim();
-    final descText = descriptionController.text.trim();
-    final orgId = orgCtrl.selectedOrg.value?.id;
+    final amount = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
 
-    // Cari ID berdasarkan Nama yang dipilih di Dropdown
-    final pocket = rxPockets.firstWhereOrNull(
-      (p) => p.name == selectedPocket.value,
-    );
-    final category = rxCategories.firstWhereOrNull(
-      (c) => c.name == selectedCategory.value,
-    );
-
-    if (pocket == null ||
-        category == null ||
-        orgId == null ||
-        rawAmount.isEmpty) {
-      _showError("Lengkapi semua data transaksi.");
+    if (amount.isEmpty || selectedCategory.value.isEmpty) {
+      Get.snackbar("Info", "Nominal dan Kategori wajib diisi");
       return;
     }
+
+    // Mapping Nama ke ID
+    final pocketObj = rxPockets.firstWhereOrNull(
+      (p) => p.name == selectedPocket.value,
+    );
+    final categoryObj = rxCategories.firstWhereOrNull(
+      (c) => c.name == selectedCategory.value,
+    );
 
     try {
       isLoading.value = true;
 
-      final success = await DashboardService.createTransaction({
-        "org_id": orgId,
-        "source_pocket_id": pocket.id,
-        "category_id": category.id,
-        "total_amount": int.parse(rawAmount),
-        "type": isIncome.value ? "IN" : "OUT",
-        "description": descText.isEmpty ? "Transaction via Mobile" : descText,
-      });
+      // Kirim model ke repository
+      final success = await repository.createTransaction(
+        TransactionModel(
+          sourcePocketId:
+              pocketObj?.id ?? (rxPockets.isNotEmpty ? rxPockets.first.id : ""),
+          categoryId: categoryObj?.id ?? "",
+          totalAmount: int.parse(amount),
+          type: isIncome.value ? "IN" : "OUT",
+          description: descriptionController.text,
+        ),
+      );
 
       if (success) {
-        Get.back(); // Tutup BottomSheet
+        Get.back();
         amountController.clear();
         descriptionController.clear();
-
-        // Refresh data dashboard & update saldo di OrganizationController
         await fetchAllData();
-        await orgCtrl.syncSelectedOrgDetails(orgId);
-
-        _showSuccess("Transaksi berhasil dicatat.");
-      } else {
-        _showError("Gagal menyimpan transaksi.");
+        await orgCtrl.syncSelectedOrgDetails(orgCtrl.selectedOrg.value!.id);
       }
     } catch (e) {
-      _showError("Terjadi kesalahan sistem.");
+      Get.snackbar("Gagal", e.toString(), backgroundColor: Colors.redAccent);
     } finally {
-      if (!isClosed) isLoading.value = false;
+      isLoading.value = false;
     }
   }
-
-  // --- Quick Add Methods (Optional) ---
-
-  Future<void> addCustomPocket(String name) async {
-    final orgId = orgCtrl.selectedOrg.value?.id;
-    if (orgId == null || name.isEmpty) return;
-
-    // Kamu bisa buatkan method khusus di DashboardService untuk ini
-    // Untuk sementara kita biarkan logic fetchAllData dipanggil setelah sukses
-    await fetchAllData();
-  }
-
-  // TAMBAHKAN METHOD INI YANG HILANG:
-  Future<void> addCustomCategory(String name) async {
-    final orgId = orgCtrl.selectedOrg.value?.id;
-    if (orgId == null || name.isEmpty) return;
-
-    // Logic: Panggil DashboardService untuk create category
-    // Untuk sekarang kita panggil fetch ulang supaya list terupdate
-    await fetchAllData();
-
-    // Otomatis pilih kategori yang baru dibuat
-    selectedCategory.value = name;
-  }
-
-  // --- Feedback Helpers ---
-
-  void _showSuccess(String msg) => Get.snackbar(
-    "Berhasil",
-    msg,
-    backgroundColor: Colors.green,
-    colorText: Colors.white,
-    snackPosition: SnackPosition.TOP,
-  );
-
-  void _showError(String msg) => Get.snackbar(
-    "Oops!",
-    msg,
-    backgroundColor: Colors.redAccent,
-    colorText: Colors.white,
-    snackPosition: SnackPosition.BOTTOM,
-  );
 
   @override
   void onClose() {

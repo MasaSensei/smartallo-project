@@ -15,6 +15,7 @@ class DashboardView extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
+    // Memanggil OrganizationController supaya bisa dipakai di UI
     final orgCtrl = Get.find<OrganizationController>();
 
     return Scaffold(
@@ -138,7 +139,7 @@ class DashboardView extends GetView<DashboardController> {
     );
   }
 
-  // --- Chart Section (Smoothed Line Chart) ---
+  // --- Chart Section ---
   Widget _buildChartSection() {
     return Container(
       height: 260,
@@ -306,10 +307,7 @@ class DashboardView extends GetView<DashboardController> {
         itemCount: controller.rxTransactions.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          // SEKARANG tx ADALAH TransactionModel
           final tx = controller.rxTransactions[index];
-
-          // AKSES PROPERTY LANGSUNG (Bukan pakai ['...'])
           final double amt = tx.totalAmount.toDouble();
           final bool isIncome = tx.type == 'IN';
 
@@ -337,7 +335,6 @@ class DashboardView extends GetView<DashboardController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        // Gunakan property categoryName dari model
                         tx.categoryName ?? "Uncategorized",
                         style: const TextStyle(
                           color: Colors.white,
@@ -359,7 +356,6 @@ class DashboardView extends GetView<DashboardController> {
                         ),
                       const SizedBox(height: 4),
                       Text(
-                        // Format tanggal simpel
                         tx.createdAt.toString().split(' ')[0],
                         style: const TextStyle(
                           color: Colors.white38,
@@ -453,7 +449,7 @@ class DashboardView extends GetView<DashboardController> {
 
   Widget _buildSwitchBtn() {
     return GestureDetector(
-      onTap: () => Get.toNamed('/organization'),
+      onTap: () => Get.toNamed(Routes.ORGANIZATION),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(

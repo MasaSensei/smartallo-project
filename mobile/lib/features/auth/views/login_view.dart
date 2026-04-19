@@ -10,7 +10,7 @@ class LoginView extends GetView<AuthController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgDark,
+      backgroundColor: AppTheme.bgDark, // Background gelap pekat
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -19,17 +19,21 @@ class LoginView extends GetView<AuthController> {
             children: [
               const SizedBox(height: 80),
               const Text(
-                "Welcome Back!", // "Siap Atur Uangmu Lagi?"
+                "Welcome Back! 👋",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 28,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "Sign in to continue managing your finances.", // "Masuk untuk melanjutkan..."
-                style: TextStyle(color: Colors.white54, fontSize: 16),
+              Text(
+                "Sign in to continue managing your finances.",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 48),
 
@@ -52,7 +56,26 @@ class LoginView extends GetView<AuthController> {
                   isPassword: true,
                   obscureText: !controller.isPasswordVisible.value,
                   onToggleVisibility:
-                      () => controller.isPasswordVisible.toggle(),
+                      () => controller.togglePasswordVisibility(),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Lupa Password (Optional, untuk pemanis UI)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // Get.toNamed(Routes.FORGOT_PASSWORD);
+                  },
+                  child: Text(
+                    "Forgot Password?",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
 
@@ -66,9 +89,9 @@ class LoginView extends GetView<AuthController> {
                   () => ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
-                      // Tambahkan ini agar saat disabled (loading) warna tetap primer
+                      foregroundColor: Colors.white,
                       disabledBackgroundColor: AppTheme.primary.withOpacity(
-                        0.7,
+                        0.6,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -90,11 +113,10 @@ class LoginView extends GetView<AuthController> {
                               ),
                             )
                             : const Text(
-                              "Sign In", // "Masuk"
+                              "Sign In",
                               style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
                                 fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                   ),
@@ -102,17 +124,19 @@ class LoginView extends GetView<AuthController> {
               ),
 
               const SizedBox(height: 24),
+
+              // Register Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Don't have an account?", // "Belum punya akun?"
-                    style: TextStyle(color: Colors.white54),
+                  Text(
+                    "Don't have an account?",
+                    style: TextStyle(color: Colors.white.withOpacity(0.6)),
                   ),
                   TextButton(
                     onPressed: () => Get.toNamed('/register'),
                     child: const Text(
-                      "Sign Up", // "Daftar"
+                      "Sign Up",
                       style: TextStyle(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.bold,

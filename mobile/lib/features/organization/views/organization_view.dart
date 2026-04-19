@@ -4,7 +4,7 @@ import 'package:mobile/routes/app_routes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../routes/app_pages.dart';
 import '../controllers/organization_controller.dart';
-import '../data/models/organization_model.dart';
+import '../../../data/models/organization_model.dart';
 
 class OrganizationView extends GetView<OrganizationController> {
   const OrganizationView({super.key});

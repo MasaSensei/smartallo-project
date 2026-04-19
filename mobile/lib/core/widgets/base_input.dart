@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BaseInput extends StatelessWidget {
   final TextEditingController controller;
@@ -8,6 +9,8 @@ class BaseInput extends StatelessWidget {
   final bool isPassword;
   final bool obscureText;
   final VoidCallback? onToggleVisibility;
+  final TextInputType? keyboardType; // Tambahan
+  final List<TextInputFormatter>? inputFormatters; // Tambahan
 
   const BaseInput({
     super.key,
@@ -18,6 +21,8 @@ class BaseInput extends StatelessWidget {
     this.isPassword = false,
     this.obscureText = false,
     this.onToggleVisibility,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
@@ -40,6 +45,8 @@ class BaseInput extends StatelessWidget {
           child: TextField(
             controller: controller,
             obscureText: obscureText,
+            keyboardType: keyboardType, // Gunakan di sini
+            inputFormatters: inputFormatters, // Gunakan di sini
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,

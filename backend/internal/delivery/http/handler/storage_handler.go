@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/MasaSensei/smartallo-backend/internal/service"
@@ -49,15 +50,24 @@ func (h *StorageHandler) Create(c echo.Context) error {
 }
 
 func (h *StorageHandler) ListByOrg(c echo.Context) error {
-	orgIDStr := c.QueryParam("org_id") // Echo pakai QueryParam, bukan Query
+	orgIDStr := c.QueryParam("org_id")
 	orgID, err := uuid.Parse(orgIDStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid Org ID"})
+		// Log error parsing UUID
+		fmt.Printf("[ERROR] Parse UUID failed: %v\n", err)
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid Org ID format"})
 	}
 
 	storages, err := h.service.ListStorages(c.Request().Context(), orgID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Gagal mengambil data storage"})
+		// INI KUNCINYA: Log error asli dari database/service ke terminal
+		fmt.Printf("[ERROR] ListStorages failed for OrgID %s: %v\n", orgIDStr, err)
+
+		// Kembalikan error asli ke Client (sementara buat debug)
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"error":   "Gagal mengambil data storage",
+			"message": err.Error(), // Hapus ini nanti kalau sudah production
+		})
 	}
 
 	return c.JSON(http.StatusOK, storages)

@@ -1,147 +1,165 @@
-// lib/app/modules/management/controllers/management_controller.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:mobile/core/constants/api_constants.dart';
-import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/organization/controllers/organization_controller.dart';
 
-class ManagementController extends GetxController {
-  final _connect = GetConnect();
-  final _storage = GetStorage();
+// Import Mixins
+import 'mixins/storage_manager.dart';
+import 'mixins/pocket_manager.dart';
+import 'mixins/category_manager.dart';
 
+// Import Models
+import '../../../data/models/storage_model.dart';
+import '../../../data/models/pocket_model.dart';
+import '../../../data/models/category_model.dart';
+
+class ManagementController extends GetxController
+    with StorageManager, PocketManager, CategoryManager {
   final orgCtrl = Get.find<OrganizationController>();
   String get _orgId => orgCtrl.selectedOrg.value?.id ?? "";
-
   var isLoading = false.obs;
-  var rxPockets = <dynamic>[].obs;
-  var rxCategories = <dynamic>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    if (_orgId.isNotEmpty) {
-      fetchAllData();
-    }
-
+    if (_orgId.isNotEmpty) fetchAllData();
     ever(orgCtrl.selectedOrg, (_) {
       if (_orgId.isNotEmpty) fetchAllData();
     });
   }
 
-  Map<String, String> get _headers => {
-    'Authorization': 'Bearer ${_storage.read('token')}',
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-
   Future<void> fetchAllData() async {
     if (_orgId.isEmpty) return;
     isLoading.value = true;
     try {
-      await Future.wait([_fetchPockets(), _fetchCategories()]);
+      await Future.wait([
+        fetchStorages(_orgId),
+        fetchPockets(_orgId),
+        fetchCategories(_orgId),
+      ]);
+    } catch (e) {
+      _showError(e);
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _fetchPockets() async {
-    final res = await _connect.get(
-      "${ApiConstants.pockets}?org_id=$_orgId",
-      headers: _headers,
+  // --- STORAGE ACTIONS ---
+  Future<void> addStorage(String name, String type, double balance) async {
+    final data = StorageModel(
+      id: '',
+      orgId: _orgId,
+      name: name,
+      type: type,
+      balance: balance,
     );
-    if (res.status.isOk) rxPockets.assignAll(res.body['data'] ?? []);
+    await _runTask(() => doAddStorage(data), "Storage created!");
   }
 
-  Future<void> _fetchCategories() async {
-    final res = await _connect.get(
-      "${ApiConstants.categories}?org_id=$_orgId",
-      headers: _headers,
+  Future<void> updateStorage(
+    String id,
+    String name,
+    String type,
+    double balance,
+  ) async {
+    final data = StorageModel(
+      id: id,
+      orgId: _orgId,
+      name: name,
+      type: type,
+      balance: balance,
     );
-    if (res.status.isOk) rxCategories.assignAll(res.body['data'] ?? []);
+    await _runTask(() => doUpdateStorage(id, data), "Storage updated!");
   }
 
-  // --- CRUD POCKET ---
+  Future<void> deleteStorage(String id) async {
+    await _runTask(
+      () => doDeleteStorage(id),
+      "Storage deleted!",
+      isDelete: true,
+    );
+  }
+
+  // --- POCKET ACTIONS ---
   Future<void> addPocket(String name, double alloc, double target) async {
-    final res = await _connect.post(ApiConstants.pockets, {
-      'name': name,
-      'allocation_rule': alloc,
-      'target_amount': target,
-      'org_id': _orgId,
-    }, headers: _headers);
-
-    _handleResponse(res, "Pocket created", _fetchPockets);
+    final data = PocketModel(
+      id: '',
+      orgId: _orgId,
+      name: name,
+      balance: 0,
+      color: '#4285F4',
+    );
+    await _runTask(() => doAddPocket(data), "Pocket created!");
   }
 
   Future<void> updatePocket(
-    dynamic id,
+    String id,
     String name,
     double alloc,
     double target,
-    double balance, // <--- Tambah parameter balance
+    double balance,
   ) async {
-    final res = await _connect.put("${ApiConstants.pockets}/$id", {
-      'name': name,
-      'allocation_rule': alloc,
-      'target_amount': target,
-      'balance': balance, // <--- Kirim ke backend
-      'org_id': _orgId,
-    }, headers: _headers);
-
-    _handleResponse(res, "Pocket updated", _fetchPockets);
-  }
-
-  Future<void> deletePocket(dynamic id) async {
-    final res = await _connect.delete(
-      "${ApiConstants.pockets}/$id",
-      headers: _headers,
+    final data = PocketModel(
+      id: id,
+      orgId: _orgId,
+      name: name,
+      balance: balance,
+      color: '#4285F4',
     );
-    if (res.status.isOk) _fetchPockets();
+    await _runTask(() => doUpdatePocket(id, data), "Pocket updated!");
   }
 
-  // --- CRUD CATEGORY ---
-  Future<void> addCategory(String name) async {
-    final res = await _connect.post(ApiConstants.categories, {
-      'name': name,
-      'org_id': _orgId,
-    }, headers: _headers);
-    _handleResponse(res, "Category added", _fetchCategories);
+  Future<void> deletePocket(String id) async {
+    await _runTask(() => doDeletePocket(id), "Pocket deleted!", isDelete: true);
   }
 
-  Future<void> updateCategory(dynamic id, String name) async {
-    final res = await _connect.put("${ApiConstants.categories}/$id", {
-      'name': name,
-      'org_id': _orgId,
-    }, headers: _headers);
-    _handleResponse(res, "Category updated", _fetchCategories);
+  // --- CATEGORY ACTIONS ---
+  Future<void> addCategory(String name, String type) async {
+    final data = CategoryModel(id: '', orgId: _orgId, name: name, type: type);
+    await _runTask(() => doAddCategory(data), "Category added!");
   }
 
-  Future<void> deleteCategory(dynamic id) async {
-    final res = await _connect.delete(
-      "${ApiConstants.categories}/$id",
-      headers: _headers,
+  Future<void> updateCategory(String id, String name, String type) async {
+    final data = CategoryModel(id: id, orgId: _orgId, name: name, type: type);
+    await _runTask(() => doUpdateCategory(id, data), "Category updated!");
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await _runTask(
+      () => doDeleteCategory(id),
+      "Category deleted!",
+      isDelete: true,
     );
-    if (res.status.isOk) _fetchCategories();
   }
 
-  void _handleResponse(Response res, String successMsg, Function refresh) {
-    if (res.status.isOk) {
-      refresh();
-      Get.back();
+  // --- GLOBAL UI HELPERS ---
+  Future<void> _runTask(
+    Future Function() task,
+    String msg, {
+    bool isDelete = false,
+  }) async {
+    try {
+      await task();
+      await fetchAllData();
+      if (!isDelete && Get.isBottomSheetOpen == true) Get.back();
       Get.snackbar(
         "Success",
-        successMsg,
+        msg,
         backgroundColor: Colors.green.withOpacity(0.5),
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
-    } else {
-      Get.snackbar(
-        "Error",
-        res.body['message'] ?? "Something went wrong",
-        backgroundColor: Colors.red.withOpacity(0.5),
-        colorText: Colors.white,
-      );
+    } catch (e) {
+      _showError(e);
     }
+  }
+
+  void _showError(dynamic e) {
+    Get.snackbar(
+      "Error",
+      e.toString().replaceAll("Exception: ", ""),
+      backgroundColor: Colors.red.withOpacity(0.5),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }

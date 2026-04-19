@@ -28,4 +28,6 @@ class ApiConstants {
   static const String subscribe = "$baseUrl/subscriptions/subscribe";
 
   static const String categories = "$baseUrl/categories";
+
+  static const String storages = "$baseUrl/storages";
 }

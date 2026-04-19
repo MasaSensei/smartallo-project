@@ -3,11 +3,17 @@ import 'package:get/get.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/auth/services/auth_service.dart';
 import 'package:mobile/routes/app_routes.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../domain/repositories/auth_repository.dart'; // Import Repository Interface
 
 class AuthController extends GetxController {
-  // Ambil instance AuthService yang sudah di-init di main.dart
+  // 1. Ambil instance Repository via Dependency Injection
+  final AuthRepository repository;
+
+  // 2. Ambil instance AuthService untuk session management
   final AuthService _authService = Get.find<AuthService>();
+
+  // Constructor untuk menerima repository dari Binding
+  AuthController({required this.repository});
 
   var isLoading = false.obs;
   var isPasswordVisible = false.obs;
@@ -16,41 +22,31 @@ class AuthController extends GetxController {
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
 
-  final _connect = GetConnect();
-
-  // Menangani alur login
+  // --- LOGIN ---
   void login() async {
     if (!_validate()) return;
 
     try {
       isLoading.value = true;
 
-      final response = await _connect.post(ApiConstants.login, {
-        "email": emailController.text.trim(),
-        "password": passwordController.text,
-      });
+      // Panggil Repository (Gak perlu post manual lagi di sini)
+      final data = await repository.login(
+        emailController.text.trim(),
+        passwordController.text,
+      );
 
-      if (response.isOk) {
-        final token = response.body['data']['token'];
-        final userData = response.body['data']['user'];
+      // Simpan session via Service
+      await _authService.saveAuth(data['token'], data['user']);
 
-        await _authService.saveAuth(token, userData);
-
-        // Get.offAllNamed akan menghancurkan controller ini,
-        // jadi tidak perlu clear manual di sini.
-        Get.offAllNamed(Routes.ORGANIZATION);
-      } else {
-        String msg = response.body?['message'] ?? "Email atau password salah!";
-        _showError(msg);
-      }
+      Get.offAllNamed(Routes.ORGANIZATION);
     } catch (e) {
-      _showError("Gagal terhubung ke server. Periksa koneksi internet.");
+      _showError(e.toString());
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Menangani alur registrasi
+  // --- REGISTER ---
   void register() async {
     if (nameController.text.isEmpty) {
       _showError("Silakan masukkan nama lengkap.");
@@ -61,14 +57,14 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _connect.post(ApiConstants.register, {
-        "username": nameController.text.trim(),
-        "email": emailController.text.trim(),
-        "password": passwordController.text,
-      });
+      // Panggil Repository
+      final success = await repository.register(
+        nameController.text.trim(),
+        emailController.text.trim(),
+        passwordController.text,
+      );
 
-      if (response.isOk) {
-        // Kembali ke halaman Login
+      if (success) {
         Get.back();
         Get.snackbar(
           "Sukses",
@@ -78,30 +74,23 @@ class AuthController extends GetxController {
           snackPosition: SnackPosition.TOP,
         );
         _clearControllers();
-      } else {
-        String msg =
-            response.body?['message'] ?? "Registrasi gagal. Coba email lain.";
-        _showError(msg);
       }
     } catch (e) {
-      _showError("Terjadi kesalahan saat mendaftar.");
+      _showError(e.toString());
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Logout menggunakan Service
+  // --- LOGOUT ---
   void logout() {
     _authService.clearAuth();
     Get.offAllNamed(Routes.LOGIN);
   }
 
-  // Toggle mata pada password field
-  void togglePasswordVisibility() {
-    isPasswordVisible.value = !isPasswordVisible.value;
-  }
+  // --- UTILS ---
+  void togglePasswordVisibility() => isPasswordVisible.toggle();
 
-  // Validasi input sederhana
   bool _validate() {
     if (!GetUtils.isEmail(emailController.text)) {
       _showError("Format email tidak valid.");
@@ -116,11 +105,9 @@ class AuthController extends GetxController {
 
   void _showError(String message) {
     String friendlyMessage = message;
-
-    // Jika pesan mengandung bau-bau database (pq, sql, dll)
     if (message.contains("pq:") ||
-        message.contains("server error") ||
-        message.contains("500")) {
+        message.contains("500") ||
+        message.contains("connection")) {
       friendlyMessage =
           "Waduh, server kami sedang istirahat sejenak. Coba lagi ya! ✨";
     }
@@ -128,14 +115,11 @@ class AuthController extends GetxController {
     Get.snackbar(
       "Ups!",
       friendlyMessage,
-      backgroundColor: AppTheme.danger.withOpacity(
-        0.9,
-      ), // Pakai warna merah Ai Hoshino
+      backgroundColor: AppTheme.danger.withOpacity(0.9),
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 4),
       margin: const EdgeInsets.all(15),
-      borderRadius: 20, // Tetap imut
+      borderRadius: 20,
       icon: const Icon(Icons.error_outline_rounded, color: Colors.white),
     );
   }
@@ -144,14 +128,5 @@ class AuthController extends GetxController {
     emailController.clear();
     passwordController.clear();
     nameController.clear();
-  }
-
-  @override
-  void onClose() {
-    // Bersihkan memory controller saat tidak digunakan
-    // emailController.dispose();
-    // passwordController.dispose();
-    // nameController.dispose();
-    super.onClose();
   }
 }

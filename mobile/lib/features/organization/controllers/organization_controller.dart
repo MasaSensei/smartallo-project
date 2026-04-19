@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import '../services/organization_service.dart';
-import '../data/models/organization_model.dart';
+import '../../../domain/repositories/organization_repository.dart';
+import '../../../data/models/organization_model.dart';
+import '../../../routes/app_routes.dart';
 
 class OrganizationController extends GetxController {
-  var isLoading = false.obs;
-  var isCreating = false.obs;
+  final OrganizationRepository repository;
   final storage = GetStorage();
 
-  final organizations = <OrganizationModel>[].obs;
-  final selectedOrg = Rxn<OrganizationModel>();
-  final orgNameController = TextEditingController();
+  OrganizationController({required this.repository});
+
+  // States
+  var isLoading = false.obs;
+  var isCreating = false.obs;
+  var organizations = <OrganizationModel>[].obs;
+  var selectedOrg = Rxn<OrganizationModel>();
   var currentTier = 'FREE'.obs;
+
+  final orgNameController = TextEditingController();
 
   @override
   void onInit() {
@@ -21,27 +27,39 @@ class OrganizationController extends GetxController {
     fetchWorkspaces();
   }
 
+  /// Ambil semua list workspace
   Future<void> fetchWorkspaces() async {
     try {
       isLoading.value = true;
-      final result = await OrganizationService.fetchAll();
-
-      if (result != null) {
-        final List? data = result['data'];
-
-        if (data != null) {
-          final list = data.map((e) => OrganizationModel.fromJson(e)).toList();
-          organizations.assignAll(list);
-          _handleAutoSelect();
-        }
-
-        // Update Tier dari Storage saja dulu kalau BE belum kirim di List
-        currentTier.value = storage.read('user_tier') ?? 'FREE';
-      }
+      final result = await repository.getAll();
+      organizations.assignAll(result);
+      _handleAutoSelect();
     } catch (e) {
-      print("Error fetch: $e"); // Biar ketahuan kalau mapping Model gagal
+      _showError(e.toString());
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// REFRESH DETAIL: Sinkronisasi saldo/chart workspace tertentu
+  Future<void> syncSelectedOrgDetails(String id) async {
+    try {
+      // Ambil data terbaru dari API
+      final updatedOrg = await repository.getDetail(id);
+
+      // Update di list utama
+      int index = organizations.indexWhere((element) => element.id == id);
+      if (index != -1) {
+        organizations[index] = updatedOrg;
+      }
+
+      // Jika yang di-update adalah yang sedang dipilih user, update RX-nya
+      if (selectedOrg.value?.id == id) {
+        selectedOrg.value = updatedOrg;
+        selectedOrg.refresh();
+      }
+    } catch (e) {
+      print("Silent error syncing org: $e");
     }
   }
 
@@ -52,58 +70,40 @@ class OrganizationController extends GetxController {
     } else if (organizations.isNotEmpty) {
       selectedOrg.value = organizations.first;
     }
-
-    if (selectedOrg.value != null) {
-      syncSelectedOrgDetails(selectedOrg.value!.id);
-    }
   }
 
-  Future<void> syncSelectedOrgDetails(String orgId) async {
-    // Panggil service yang nembak endpoint detail
-    final detail = await OrganizationService.getDetail(orgId);
-
-    if (detail != null) {
-      int index = organizations.indexWhere((o) => o.id == orgId);
-      if (index != -1) {
-        organizations[index] = detail; // Update list biar saldo berubah
-      }
-      if (selectedOrg.value?.id == orgId) {
-        selectedOrg.value = detail; // Update state yang lagi dipake
-      }
-    }
-  }
-
-  void selectWorkspace(OrganizationModel org) async {
+  /// Pilih Workspace dan arahkan ke Dashboard
+  void selectWorkspace(OrganizationModel org) {
     selectedOrg.value = org;
     storage.write('active_org_id', org.id);
-    await syncSelectedOrgDetails(org.id);
-    Get.offAllNamed('/dashboard');
+
+    // Gunakan offAll kalau baru login/ganti total,
+    // tapi kalau cuma update data bisa pakai logic lain.
+    if (Get.currentRoute != Routes.DASHBOARD) {
+      Get.offAllNamed(Routes.DASHBOARD);
+    }
   }
 
   Future<void> createWorkspace() async {
     final name = orgNameController.text.trim();
-    if (name.isEmpty) {
-      _showError("Workspace name cannot be empty!");
-      return;
-    }
+    if (name.isEmpty) return;
 
     try {
       isCreating.value = true;
-      final result = await OrganizationService.create(name);
+      await repository.create(name);
 
-      if (result != null && result['success'] == true) {
-        Get.back();
-        orgNameController.clear();
-        Get.snackbar(
-          "Success",
-          "Workspace '$name' created!",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-        fetchWorkspaces();
-      } else {
-        _showError(result?['message'] ?? "Failed to create workspace.");
-      }
+      Get.back();
+      orgNameController.clear();
+      Get.snackbar(
+        "Sukses",
+        "Workspace '$name' berhasil dibuat! ✨",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
+      await fetchWorkspaces();
+    } catch (e) {
+      _showError(e.toString());
     } finally {
       isCreating.value = false;
     }
@@ -111,7 +111,7 @@ class OrganizationController extends GetxController {
 
   void _showError(String message) {
     Get.snackbar(
-      "Error",
+      "Ups!",
       message,
       backgroundColor: Colors.redAccent,
       colorText: Colors.white,

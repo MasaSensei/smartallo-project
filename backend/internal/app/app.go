@@ -22,6 +22,7 @@ func Run() {
 
 	orgRepo := repository.NewOrgRepository(db)
 	txRepo := repository.NewTransactionRepository(db)
+	storageRepo := repository.NewStorageRepository(db)
 
 	auditService := service.NewAuditService(db)
 	authService := service.NewAuthService(db, jwtSecret)
@@ -31,6 +32,7 @@ func Run() {
 	catService := service.NewCategoryService(db, auditService)
 	dashService := service.NewDashboardService(db)
 	subscriptionService := service.NewSubscriptionService(db)
+	storageService := service.NewStorageService(storageRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	orgHandler := handler.NewOrgHandler(orgService)
@@ -39,6 +41,7 @@ func Run() {
 	catHandler := handler.NewCategoryHandler(catService)
 	dashHandler := handler.NewDashboardHandler(dashService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
+	storageHandler := handler.NewStorageHandler(storageService)
 
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -56,6 +59,7 @@ func Run() {
 		OrgHandler:          orgHandler,
 		TransactionHandler:  txHandler,
 		PocketHandler:       pocketHandler,
+		StorageHandler:      storageHandler,
 		CategoryHandler:     catHandler,
 		DashboardHandler:    dashHandler,
 		SubscriptionHandler: subscriptionHandler,
