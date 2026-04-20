@@ -70,7 +70,9 @@ func (h *StorageHandler) ListByOrg(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, storages)
+	return c.JSON(http.StatusOK, echo.Map{
+        "data": storages,
+    })
 }
 
 func (h *StorageHandler) Update(c echo.Context) error {

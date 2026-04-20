@@ -17,7 +17,7 @@ class PocketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double balance = double.tryParse(p.balance.toString()) ?? 0;
-    double target = double.tryParse(p.target_amount?.toString() ?? "0") ?? 0;
+    double target = double.tryParse(p.targetAmount?.toString() ?? "0") ?? 0;
     double progress = (target > 0) ? (balance / target).clamp(0.0, 1.0) : 0.0;
 
     return Container(
@@ -42,7 +42,7 @@ class PocketCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (p.allocation_rule > 0) _buildBadge("${p.allocation_rule}%"),
+                if (p.allocationRule > 0) _buildBadge("${p.allocationRule}%"),
               ],
             ),
             subtitle: Padding(

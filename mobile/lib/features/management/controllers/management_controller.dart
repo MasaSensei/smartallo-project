@@ -80,12 +80,20 @@ class ManagementController extends GetxController
   }
 
   // --- POCKET ACTIONS ---
-  Future<void> addPocket(String name, double alloc, double target) async {
+  Future<void> addPocket(
+    String name,
+    double alloc,
+    double target,
+    bool isMain,
+  ) async {
     final data = PocketModel(
       id: '',
       orgId: _orgId,
       name: name,
       balance: 0,
+      allocationRule: alloc, // Masukin alloc
+      targetAmount: target, // Masukin target
+      isMain: isMain, // Masukin isMain
       color: '#4285F4',
     );
     await _runTask(() => doAddPocket(data), "Pocket created!");
@@ -97,12 +105,16 @@ class ManagementController extends GetxController
     double alloc,
     double target,
     double balance,
+    bool isMain,
   ) async {
     final data = PocketModel(
       id: id,
       orgId: _orgId,
       name: name,
       balance: balance,
+      allocationRule: alloc, // Masukin alloc
+      targetAmount: target, // Masukin target
+      isMain: isMain, // Masukin isMain
       color: '#4285F4',
     );
     await _runTask(() => doUpdatePocket(id, data), "Pocket updated!");

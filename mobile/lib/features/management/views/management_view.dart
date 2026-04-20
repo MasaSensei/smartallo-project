@@ -3,12 +3,11 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../controllers/management_controller.dart';
 
-// Widgets yang sudah kita buat sebelumnya
+// Widgets
 import '../widgets/pocket_card.dart';
 import '../widgets/category_item.dart';
 import '../widgets/management_forms.dart';
 import '../widgets/delete_dialog.dart';
-import '../widgets/storage_card.dart'; // Pastikan lo buat widget ini atau pakai ListTile biasa dulu
 
 class ManagementView extends GetView<ManagementController> {
   const ManagementView({super.key});
@@ -16,7 +15,7 @@ class ManagementView extends GetView<ManagementController> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // Ubah jadi 3 karena ada Storage
+      length: 3,
       child: Scaffold(
         backgroundColor: AppTheme.bgDark,
         appBar: AppBar(
@@ -40,18 +39,18 @@ class ManagementView extends GetView<ManagementController> {
         ),
         body: TabBarView(
           children: [
-            _buildStorageTab(context),
-            _buildPocketTab(context),
-            _buildCategoryTab(context),
+            _buildStorageTab(),
+            _buildPocketTab(),
+            _buildCategoryTab(),
           ],
         ),
-        floatingActionButton: _buildFab(context),
+        floatingActionButton: _buildFab(),
       ),
     );
   }
 
   // --- TAB STORAGE ---
-  Widget _buildStorageTab(BuildContext context) {
+  Widget _buildStorageTab() {
     return Obx(() {
       if (controller.isLoading.value)
         return const Center(child: CircularProgressIndicator());
@@ -64,7 +63,6 @@ class ManagementView extends GetView<ManagementController> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, i) {
           final s = controller.rxStorages[i];
-          // Ganti dengan widget StorageCard lo
           return ListTile(
             tileColor: Colors.white.withOpacity(0.03),
             shape: RoundedRectangleBorder(
@@ -72,7 +70,11 @@ class ManagementView extends GetView<ManagementController> {
             ),
             leading: const CircleAvatar(
               backgroundColor: AppTheme.primary,
-              child: Icon(Icons.account_balance_wallet, color: Colors.white),
+              child: Icon(
+                Icons.account_balance_wallet,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             title: Text(
               s.name,
@@ -83,10 +85,14 @@ class ManagementView extends GetView<ManagementController> {
             ),
             subtitle: Text(
               s.type,
-              style: const TextStyle(color: Colors.white38),
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+                size: 20,
+              ),
               onPressed:
                   () => DeleteDialog.show(
                     onConfirm: () => controller.deleteStorage(s.id!),
@@ -104,7 +110,7 @@ class ManagementView extends GetView<ManagementController> {
   }
 
   // --- TAB POCKETS ---
-  Widget _buildPocketTab(BuildContext context) {
+  Widget _buildPocketTab() {
     return Obx(() {
       if (controller.isLoading.value)
         return const Center(child: CircularProgressIndicator());
@@ -117,11 +123,10 @@ class ManagementView extends GetView<ManagementController> {
         itemBuilder: (context, i) {
           final p = controller.rxPockets[i];
           return PocketCard(
-            p: p, // Sekarang passing PocketModel asli, bukan Map lagi
+            p: p,
             onEdit:
                 () => ManagementForms.showPocketForm(
-                  context,
-                  pocket: p,
+                  pocket: p, // Context sudah dihapus di parameter form
                   controller: controller,
                 ),
             onDelete:
@@ -135,7 +140,7 @@ class ManagementView extends GetView<ManagementController> {
   }
 
   // --- TAB CATEGORIES ---
-  Widget _buildCategoryTab(BuildContext context) {
+  Widget _buildCategoryTab() {
     return Obx(() {
       if (controller.isLoading.value)
         return const Center(child: CircularProgressIndicator());
@@ -149,7 +154,7 @@ class ManagementView extends GetView<ManagementController> {
         itemBuilder: (context, i) {
           final c = controller.rxCategories[i];
           return CategoryItem(
-            category: c, // Sekarang passing CategoryModel asli
+            category: c,
             onEdit:
                 () => ManagementForms.showCategoryForm(
                   category: c,
@@ -166,7 +171,7 @@ class ManagementView extends GetView<ManagementController> {
   }
 
   // --- FLOATING ACTION BUTTON ---
-  Widget _buildFab(BuildContext context) {
+  Widget _buildFab() {
     return Builder(
       builder:
           (fabContext) => FloatingActionButton.extended(
@@ -181,10 +186,11 @@ class ManagementView extends GetView<ManagementController> {
             ),
             onPressed: () {
               final index = DefaultTabController.of(fabContext).index;
+              // Panggilan form sekarang seragam tanpa BuildContext
               if (index == 0) {
                 ManagementForms.showStorageForm(controller: controller);
               } else if (index == 1) {
-                ManagementForms.showPocketForm(context, controller: controller);
+                ManagementForms.showPocketForm(controller: controller);
               } else {
                 ManagementForms.showCategoryForm(controller: controller);
               }

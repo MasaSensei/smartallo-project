@@ -36,6 +36,9 @@ class PocketRepositoryImpl extends GetConnect implements PocketRepository {
       "org_id": pocket.orgId,
       "name": pocket.name,
       "balance": pocket.balance,
+      "allocation_rule": pocket.allocationRule, // TAMBAHIN INI
+      "target_amount": pocket.targetAmount, // TAMBAHIN INI
+      "is_main": pocket.isMain, // TAMBAHIN INI
       "color": pocket.color,
     });
     if (res.isOk) return PocketModel.fromJson(res.body['data']);
@@ -47,6 +50,9 @@ class PocketRepositoryImpl extends GetConnect implements PocketRepository {
     final res = await put("${_p(ApiConstants.pockets)}/$id", {
       "name": pocket.name,
       "balance": pocket.balance,
+      "allocation_rule": pocket.allocationRule, // TAMBAHIN INI
+      "target_amount": pocket.targetAmount, // TAMBAHIN INI
+      "is_main": pocket.isMain, // TAMBAHIN INI
       "color": pocket.color,
     });
     if (res.isOk) return PocketModel.fromJson(res.body['data']);
